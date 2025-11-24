@@ -1,4 +1,4 @@
-package com.team8.fooddelivery.dto;
+package com.team8.fooddelivery.util;
 
 import com.team8.fooddelivery.model.ClientStatus;
 import lombok.AllArgsConstructor;
