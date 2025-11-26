@@ -3,12 +3,11 @@ FROM maven:3.9.6-eclipse-temurin-17 AS build
 
 WORKDIR /app
 
-# Копируем проект, включая pom.xml
+# Копируем ВСЕ файлы проекта
 COPY . .
 
-# Копируем скрипт и даем права на выполнение
-COPY run_scheme.sh /app/run_scheme.sh
-RUN chmod +x /app/run_scheme.sh
+# Даем права на выполнение скриптов
+RUN chmod +x run_scheme.sh
 
 # Собираем jar
 RUN mvn -q -e -DskipTests package
@@ -21,9 +20,8 @@ WORKDIR /app
 # Копируем собранный jar
 COPY --from=build /app/target/*.jar app.jar
 
-# Копируем скрипт из stage сборки
+# Копируем скрипты из stage сборки
 COPY --from=build /app/run_scheme.sh /app/run_scheme.sh
-RUN chmod +x /app/run_scheme.sh
 
 # Устанавливаем postgresql-client для использования psql и pg_isready
 RUN apt-get update && apt-get install -y postgresql-client && rm -rf /var/lib/apt/lists/*

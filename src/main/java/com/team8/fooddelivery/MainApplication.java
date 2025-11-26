@@ -13,7 +13,7 @@ public class MainApplication {
         System.out.println("🚀 Запуск инициализации базы данных через скрипт...");
 
         try {
-            runSchemaScript();
+            runSchemeScript();
             System.out.println("🎉 Инициализация базы данных завершена успешно!");
         } catch (Exception e) {
             System.err.println("💥 Ошибка при инициализации базы данных: " + e.getMessage());
@@ -25,7 +25,7 @@ public class MainApplication {
     /**
      * Запускает bash-скрипт для инициализации схемы БД
      */
-    public static void runSchemaScript() throws IOException, InterruptedException {
+    public static void runSchemeScript() throws IOException, InterruptedException {
         String scriptPath = "./run_scheme.sh";
 
         // Проверяем существование скрипта

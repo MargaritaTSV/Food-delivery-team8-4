@@ -1,6 +1,6 @@
 package com.team8.fooddelivery.userstory;
 
-import com.team8.fooddelivery.dto.AuthResponse;
+import com.team8.fooddelivery.util.AuthResponse;
 import com.team8.fooddelivery.model.Address;
 import com.team8.fooddelivery.model.Client;
 import com.team8.fooddelivery.model.ClientStatus;
