@@ -1,7 +1,7 @@
 services:
-  app:
-    build: .
-    image: my-java-app
+  tests:
+    image: maven:3.9.6-eclipse-temurin-17
+    container_name: food-delivery-tests
     depends_on:
       db:
         condition: service_healthy
@@ -9,17 +9,17 @@ services:
       DB_URL: jdbc:postgresql://db:5432/food_delivery
       DB_USER: fooddelivery_user
       DB_PASSWORD: fooddelivery_pass
-      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/food_delivery
-      SPRING_DATASOURCE_USERNAME: fooddelivery_user
-      SPRING_DATASOURCE_PASSWORD: fooddelivery_pass
-    ports:
-      - "8080:8080"
+      DB_HOST: db
+      DB_PORT: 5432
+    working_dir: /app
+    entrypoint: ["/bin/bash", "-lc"]
+    command: "./run_scheme.sh && mvn test -Ddb.user=$$DB_USER -Ddb.password=$$DB_PASSWORD"
     volumes:
-      - ./src/main/resources/sql:/app/src/main/resources/sql
+      - ./:/app
 
   db:
     image: postgres:15
-    container_name: pgdb
+    container_name: food-delivery-db
     restart: always
     environment:
       POSTGRES_USER: fooddelivery_user

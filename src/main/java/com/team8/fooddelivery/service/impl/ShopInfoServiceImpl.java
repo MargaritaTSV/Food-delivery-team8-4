@@ -1,7 +1,7 @@
 package com.team8.fooddelivery.service.impl;
 
-import com.team8.fooddelivery.model.Shop;
-import com.team8.fooddelivery.model.ShopStatus;
+import com.team8.fooddelivery.model.shop.Shop;
+import com.team8.fooddelivery.model.shop.ShopStatus;
 import com.team8.fooddelivery.repository.ShopRepository;
 import com.team8.fooddelivery.service.ShopInfoService;
 import org.slf4j.Logger;

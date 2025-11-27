@@ -1,8 +1,9 @@
 package com.team8.fooddelivery.service.impl;
 
-import com.team8.fooddelivery.model.Cart;
-import com.team8.fooddelivery.model.CartItem;
+import com.team8.fooddelivery.model.product.Cart;
+import com.team8.fooddelivery.model.product.CartItem;
 import com.team8.fooddelivery.repository.CartRepository;
+import com.team8.fooddelivery.repository.ClientRepository;
 import com.team8.fooddelivery.service.CartService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,6 +15,7 @@ public class CartServiceImpl implements CartService {
 
     private static final Logger logger = LoggerFactory.getLogger(CartServiceImpl.class);
     private final CartRepository cartRepository = new CartRepository();
+    private final ClientRepository clientRepository = new ClientRepository();
 
     // Используется ClientService при регистрации
     public Cart createCartForClient(Long clientId) {
@@ -24,6 +26,8 @@ public class CartServiceImpl implements CartService {
                     .items(new ArrayList<>())
                     .build();
         }
+
+        validateClient(clientId);
 
         try {
             // Проверяем, есть ли уже корзина для этого клиента
@@ -49,6 +53,7 @@ public class CartServiceImpl implements CartService {
 
     @Override
     public Cart getCartForClient(Long clientId) {
+        validateClient(clientId);
         try {
             return cartRepository.findByClientId(clientId).orElse(null);
         } catch (SQLException e) {
@@ -159,6 +164,7 @@ public class CartServiceImpl implements CartService {
     // ---------------------------------
 
     private Cart getOrCreate(Long clientId) {
+        validateClient(clientId);
         try {
             Optional<Cart> existingCart = cartRepository.findByClientId(clientId);
             if (existingCart.isPresent()) {
@@ -177,6 +183,17 @@ public class CartServiceImpl implements CartService {
         } catch (SQLException e) {
             logger.error("Ошибка при получении/создании корзины для клиента {}", clientId, e);
             throw new RuntimeException("Не удалось получить или создать корзину", e);
+        }
+    }
+
+    private void validateClient(Long clientId) {
+        try {
+            if (clientId == null || clientRepository.findById(clientId).isEmpty()) {
+                throw new IllegalArgumentException("Клиент не найден или не задан");
+            }
+        } catch (SQLException e) {
+            logger.error("Ошибка при проверке существования клиента {}", clientId, e);
+            throw new RuntimeException("Не удалось проверить клиента", e);
         }
     }
 }

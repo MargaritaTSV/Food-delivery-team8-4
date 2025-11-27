@@ -1,5 +1,4 @@
--- Таблица адресов
-CREATE TABLE addresses (
+CREATE TABLE IF NOT EXISTS addresses (
     id BIGSERIAL PRIMARY KEY,
     country VARCHAR(100) DEFAULT 'Russia',
     city VARCHAR(100) NOT NULL,
@@ -14,4 +13,4 @@ CREATE TABLE addresses (
     address_note TEXT,
     district VARCHAR(100),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
+);

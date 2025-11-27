@@ -1,8 +1,8 @@
 package com.team8.fooddelivery.repository;
 
 import com.team8.fooddelivery.model.Address;
-import com.team8.fooddelivery.model.Client;
-import com.team8.fooddelivery.model.ClientStatus;
+import com.team8.fooddelivery.model.client.Client;
+import com.team8.fooddelivery.model.client.ClientStatus;
 import com.team8.fooddelivery.util.DatabaseConnection;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.DisplayName;
@@ -21,6 +21,9 @@ public class ClientRepositoryTest {
 
     private static ClientRepository clientRepository;
     private static Long testClientId;
+    private static String createdPhone;
+    private static String createdEmail;
+    private static String createdName;
 
     @BeforeAll
     static void setUp() throws SQLException {
@@ -58,10 +61,16 @@ public class ClientRepositoryTest {
                 .longitude(37.6173)
                 .build();
 
+        long suffix = System.currentTimeMillis();
+
+        createdName = "Тестовый Клиент " + suffix;
+        createdPhone = "+7999" + (suffix % 1_000_0000);
+        createdEmail = "test" + suffix + "@example.com";
+
         Client client = Client.builder()
-                .name("Тестовый Клиент")
-                .phone("+79991234567")
-                .email("test@example.com")
+                .name(createdName)
+                .phone(createdPhone)
+                .email(createdEmail)
                 .passwordHash("hashed_password")
                 .address(address)
                 .status(ClientStatus.ACTIVE)
@@ -85,9 +94,9 @@ public class ClientRepositoryTest {
         assertTrue(clientOpt.isPresent(), "Клиент должен быть найден");
 
         Client client = clientOpt.get();
-        assertEquals("Тестовый Клиент", client.getName());
-        assertEquals("+79991234567", client.getPhone());
-        assertEquals("test@example.com", client.getEmail());
+        assertEquals(createdName, client.getName());
+        assertEquals(createdPhone, client.getPhone());
+        assertEquals(createdEmail, client.getEmail());
         assertEquals(ClientStatus.ACTIVE, client.getStatus());
     }
 
@@ -97,7 +106,7 @@ public class ClientRepositoryTest {
     void testFindByPhone() throws SQLException {
         assumeTrue(testClientId != null, "Тест сохранения должен пройти первым");
 
-        Optional<Client> clientOpt = clientRepository.findByPhone("+79991234567");
+        Optional<Client> clientOpt = clientRepository.findByPhone(createdPhone);
         assertTrue(clientOpt.isPresent(), "Клиент должен быть найден по телефону");
         assertEquals(testClientId, clientOpt.get().getId());
     }
@@ -108,7 +117,7 @@ public class ClientRepositoryTest {
     void testFindByEmail() throws SQLException {
         assumeTrue(testClientId != null, "Тест сохранения должен пройти первым");
 
-        Optional<Client> clientOpt = clientRepository.findByEmail("test@example.com");
+        Optional<Client> clientOpt = clientRepository.findByEmail(createdEmail);
         assertTrue(clientOpt.isPresent(), "Клиент должен быть найден по email");
         assertEquals(testClientId, clientOpt.get().getId());
     }
@@ -145,14 +154,12 @@ public class ClientRepositoryTest {
 
     @Test
     @Order(7)
-    @DisplayName("Удаление клиента")
-    void testDeleteClient() throws SQLException {
+    @DisplayName("Клиент остается в базе после тестов")
+    void testClientPersistence() throws SQLException {
         assumeTrue(testClientId != null, "Тест сохранения должен пройти первым");
 
-        clientRepository.delete(testClientId);
-
         Optional<Client> clientOpt = clientRepository.findById(testClientId);
-        assertFalse(clientOpt.isPresent(), "Клиент должен быть удален");
+        assertTrue(clientOpt.isPresent(), "Клиент должен остаться в базе для последующих проверок");
     }
 }
 

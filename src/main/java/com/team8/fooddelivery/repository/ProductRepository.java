@@ -1,7 +1,7 @@
 package com.team8.fooddelivery.repository;
 
-import com.team8.fooddelivery.model.Product;
-import com.team8.fooddelivery.model.ProductCategory;
+import com.team8.fooddelivery.model.product.Product;
+import com.team8.fooddelivery.model.product.ProductCategory;
 import com.team8.fooddelivery.util.DatabaseConnection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -1,7 +1,7 @@
 package com.team8.fooddelivery.service.impl;
 
-import com.team8.fooddelivery.model.Notification;
-import com.team8.fooddelivery.model.NotificationTemplate;
+import com.team8.fooddelivery.model.notification.Notification;
+import com.team8.fooddelivery.model.notification.NotificationTemplate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -1,7 +1,7 @@
 package com.team8.fooddelivery.service;
 
 import com.team8.fooddelivery.model.Address;
-import com.team8.fooddelivery.model.Client;
+import com.team8.fooddelivery.model.client.Client;
 import java.util.List;
 
 public interface ClientService {

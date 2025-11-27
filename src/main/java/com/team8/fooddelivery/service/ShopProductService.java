@@ -1,9 +1,9 @@
 package com.team8.fooddelivery.service;
 
-import com.team8.fooddelivery.model.Product;
-import com.team8.fooddelivery.model.Shop;
-import com.team8.fooddelivery.model.ProductCategory;
-import com.team8.fooddelivery.model.ShopStatus;
+import com.team8.fooddelivery.model.product.Product;
+import com.team8.fooddelivery.model.shop.Shop;
+import com.team8.fooddelivery.model.product.ProductCategory;
+import com.team8.fooddelivery.model.shop.ShopStatus;
 
 import java.util.List;
 

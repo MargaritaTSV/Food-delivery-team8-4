@@ -14,22 +14,31 @@ public class DatabaseConnectionTest {
 
   // Единые учетные данные (совместимость со скриптами)
   private static final String DEFAULT_DB_URL = "jdbc:postgresql://localhost:5432/food_delivery";
-  private static final String DEFAULT_DB_USER = "fooddelivery_user";
-  private static final String DEFAULT_DB_PASSWORD = "fooddelivery_pass";
+  private static final String DEFAULT_DB_USER = "postgres";
+  private static final String DEFAULT_DB_PASSWORD = "postgres";
 
   @BeforeEach
   void setUp() {
+    //DatabaseConnection.initializeDatabase();
     // Используем системные свойства или значения по умолчанию
     String dbUrl = System.getProperty("db.url", DEFAULT_DB_URL);
     String dbUser = System.getProperty("db.user", DEFAULT_DB_USER);
     String dbPassword = System.getProperty("db.password", DEFAULT_DB_PASSWORD);
-
     DatabaseConnection.setConnectionParams(dbUrl, dbUser, dbPassword);
 
     System.out.println("Тестовые параметры подключения:");
     System.out.println("URL: " + dbUrl);
     System.out.println("User: " + dbUser);
     System.out.println("Password: " + (dbPassword.isEmpty() ? "(empty)" : "***"));
+
+    // Инициализируем структуру БД
+    try {
+      DatabaseConnection.initializeDatabase();
+      System.out.println("✅ База данных успешно инициализирована");
+    } catch (Exception e) {
+      System.err.println("❌ Ошибка инициализации БД: " + e.getMessage());
+      throw new RuntimeException("Не удалось инициализировать тестовую БД", e);
+    }
   }
 
   @Test

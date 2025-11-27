@@ -1,10 +1,10 @@
 package com.team8.fooddelivery.service.impl;
 
-import com.team8.fooddelivery.util.AuthResponse;
+import com.team8.fooddelivery.model.AuthResponse;
 import com.team8.fooddelivery.model.Address;
-import com.team8.fooddelivery.model.Cart;
-import com.team8.fooddelivery.model.Client;
-import com.team8.fooddelivery.model.ClientStatus;
+import com.team8.fooddelivery.model.product.Cart;
+import com.team8.fooddelivery.model.client.Client;
+import com.team8.fooddelivery.model.client.ClientStatus;
 import com.team8.fooddelivery.repository.ClientRepository;
 import com.team8.fooddelivery.service.ClientService;
 import com.team8.fooddelivery.util.PasswordUtils;

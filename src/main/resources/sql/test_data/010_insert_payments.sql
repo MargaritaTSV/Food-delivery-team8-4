@@ -1,0 +1,22 @@
+-- Тестовые платежи
+INSERT INTO payments (id, order_id, amount, method, status)
+VALUES
+  (9201, 7001, 1040.0, 'CARD', 'PAID'),
+  (9202, 7002, 980.0, 'CASH', 'PENDING'),
+  (9203, 7003, 840.0, 'ONLINE', 'PAID'),
+  (9204, 7004, 870.0, 'CARD', 'PAID'),
+  (9205, 7005, 630.0, 'CASH', 'PENDING'),
+  (9206, 7006, 300.0, 'ONLINE', 'PAID'),
+  (9207, 7007, 880.0, 'CARD', 'PAID'),
+  (9208, 7008, 480.0, 'CARD', 'PAID'),
+  (9209, 7009, 430.0, 'ONLINE', 'PAID'),
+  (9210, 7010, 360.0, 'CARD', 'PAID'),
+  (9211, 7011, 470.0, 'ONLINE', 'PAID'),
+  (9212, 7012, 320.0, 'CASH', 'PENDING'),
+  (9213, 7013, 1350.0, 'CARD', 'PAID'),
+  (9214, 7014, 310.0, 'ONLINE', 'PAID'),
+  (9215, 7015, 390.0, 'CARD', 'PAID'),
+  (9216, 7016, 420.0, 'ONLINE', 'PAID'),
+  (9217, 7017, 520.0, 'CASH', 'PENDING'),
+  (9218, 7018, 540.0, 'CARD', 'PAID')
+ON CONFLICT DO NOTHING;

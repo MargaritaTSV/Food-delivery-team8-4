@@ -1,5 +1,5 @@
-CREATE TABLE carts (
+CREATE TABLE IF NOT EXISTS carts (
     id BIGSERIAL PRIMARY KEY,
-    client_id BIGINT REFERENCES clients(id) ON DELETE CASCADE,
+    client_id BIGINT,
     UNIQUE(client_id)
 );

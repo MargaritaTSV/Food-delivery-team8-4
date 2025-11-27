@@ -22,6 +22,7 @@ COPY --from=build /app/target/*.jar app.jar
 
 # Копируем скрипты из stage сборки
 COPY --from=build /app/run_scheme.sh /app/run_scheme.sh
+RUN chmod +x /app/run_scheme.sh
 
 # Устанавливаем postgresql-client для использования psql и pg_isready
 RUN apt-get update && apt-get install -y postgresql-client && rm -rf /var/lib/apt/lists/*
@@ -29,5 +30,6 @@ RUN apt-get update && apt-get install -y postgresql-client && rm -rf /var/lib/ap
 # Порт приложения
 EXPOSE 8080
 
-# Запуск
-ENTRYPOINT ["java", "-jar", "app.jar"]
+# Запуск по умолчанию (может быть переопределен в docker-compose)
+ENTRYPOINT ["/bin/sh", "-c"]
+CMD ["java -jar app.jar"]

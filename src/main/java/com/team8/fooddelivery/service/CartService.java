@@ -1,7 +1,7 @@
 package com.team8.fooddelivery.service;
 
-import com.team8.fooddelivery.model.Cart;
-import com.team8.fooddelivery.model.CartItem;
+import com.team8.fooddelivery.model.product.Cart;
+import com.team8.fooddelivery.model.product.CartItem;
 import java.util.List;
 
 public interface CartService {

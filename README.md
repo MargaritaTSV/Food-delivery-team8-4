@@ -1,456 +1,106 @@
-# Food Delivery (Примерная инструкция по проекту)
+# Food Delivery Service
 
-# Настройка PostgreSQL для Food Delivery Service
+Минимальная инструкция по подготовке БД и запуску тестов без вспомогательных скриптов.
 
 ## Требования
-- PostgreSQL 12 или выше
 - Java 17
+- PostgreSQL 12+
+- Maven 3.9+
+- Проект без Spring (plain JDBC + Lombok)
 
-## Шаги настройки
-
-### 1. Установка PostgreSQL
-Убедитесь, что PostgreSQL установлен и запущен на вашей системе.
-
-### 2. Создание базы данных
-```sql
-CREATE DATABASE food_delivery;
-```
-
-### 3. Создание схемы
-Выполните SQL скрипт из файла `src/main/resources/schema.sql`:
-```bash
-psql -U postgres -d food_delivery -f src/main/resources/schema.sql
-```
-
-Или через psql:
-```bash
-psql -U postgres -d food_delivery
-\i src/main/resources/schema.sql
-```
-
-### 4. Настройка подключения
-
-**Важно:** Имя пользователя PostgreSQL зависит от вашей системы:
-
-- **macOS (Homebrew):** обычно используется ваше имя пользователя системы (проверьте через `whoami`)
-- **Linux:** обычно используется `postgres`
-
-По умолчанию приложение использует следующие параметры:
-- URL: `jdbc:postgresql://localhost:5432/food_delivery`
-- User: `postgres` (на Linux) или ваше имя пользователя (на macOS)
-- Password: `postgres` (на Linux) или пустой (на macOS)
-
-#### Способ 1: Через системные свойства
-```bash
-java -Ddb.url=jdbc:postgresql://localhost:5432/food_delivery \
-     -Ddb.user=your_user \
-     -Ddb.password=your_password \
-     YourMainClass
-```
-
-#### Способ 2: Программно
-```java
-DatabaseConnection.setConnectionParams(
-    "jdbc:postgresql://localhost:5432/food_delivery",
-    "your_user",
-    "your_password"
-);
-```
-
-### 5. Проверка подключения
-```java
-if (DatabaseConnection.testConnection()) {
-    System.out.println("Подключение к БД успешно!");
-} else {
-    System.out.println("Ошибка подключения к БД");
-}
-```
-
-## Использование Repository
-
-Все Repository классы находятся в пакете `com.team8.fooddelivery.repository`:
-
-- `AddressRepository` - работа с адресами
-- `ClientRepository` - работа с клиентами
-- `ShopRepository` - работа с магазинами
-- `ProductRepository` - работа с продуктами
-- `CourierRepository` - работа с курьерами
-- `CartRepository` - работа с корзинами
-- `OrderRepository` - работа с заказами
-- `WorkingHoursRepository` - работа с рабочими часами
-
-### Пример использования:
-```java
-ClientRepository clientRepository = new ClientRepository();
-
-// Сохранение клиента
-Client client = Client.builder()
-    .name("Иван Иванов")
-    .phone("+79991234567")
-    .email("ivan@example.com")
-    .passwordHash(PasswordUtils.hashPassword("password123"))
-    .status(ClientStatus.ACTIVE)
-    .isActive(true)
-    .build();
-
-Long clientId = clientRepository.save(client);
-
-// Поиск клиента
-Optional<Client> foundClient = clientRepository.findById(clientId);
-Optional<Client> byPhone = clientRepository.findByPhone("+79991234567");
-
-// Обновление клиента
-client.setName("Иван Петров");
-clientRepository.update(client);
-
-// Удаление клиента
-clientRepository.delete(clientId);
-```
-
-## Обработка ошибок
-
-Все методы Repository могут выбрасывать `SQLException`. Рекомендуется обрабатывать их в сервисном слое:
-
-```java
-try {
-    Long clientId = clientRepository.save(client);
-} catch (SQLException e) {
-    logger.error("Ошибка при сохранении клиента", e);
-    throw new RuntimeException("Не удалось сохранить клиента", e);
-}
-```
-# Быстрый старт тестирования
-
-## Автоматическая проверка подключения
-
-Запустите скрипт для автоматической проверки:
-```bash
-./check_db_connection.sh
-```
-
-Скрипт покажет все необходимые параметры для запуска тестов.
-
-## Ручная настройка
-
-### Шаг 1: Определение имени пользователя PostgreSQL
-
-**На macOS (Homebrew):** обычно используется ваше имя пользователя системы:
-```bash
-whoami  # покажет ваше имя пользователя (например: smolevanataliia)
-```
-
-**На Linux:** обычно используется `postgres`
-
-### Шаг 2: Подготовка БД
-
-#### Для macOS (Homebrew):
-```bash
-# Создайте БД (используйте ваше имя пользователя)
-createdb food_delivery
-
-# Создайте схему
-psql -d food_delivery -f src/main/resources/schema.sql
-```
-
-#### Для Linux (стандартная установка):
-```bash
-# Создайте БД
-createdb -U postgres food_delivery
-
-# Создайте схему
-psql -U postgres -d food_delivery -f src/main/resources/schema.sql
-```
-
-### Шаг 3: Запуск простого теста подключения
-
-#### Для macOS (используйте ваше имя пользователя):
-```bash
-mvn test -Dtest=SimpleConnectionTest \
-         -Ddb.user=$(whoami) \
-         -Ddb.password=""
-```
-
-#### Для Linux:
-```bash
-mvn test -Dtest=SimpleConnectionTest \
-         -Ddb.user=postgres \
-         -Ddb.password=postgres
-```
-
-Если видите `✅ Подключение к базе данных успешно!` - всё работает!
-
-### Шаг 4: Запуск всех тестов
-
-#### macOS:
-```bash
-mvn test -Ddb.user=$(whoami) -Ddb.password=""
-```
-
-#### Linux:
-```bash
-mvn test -Ddb.user=postgres -Ddb.password=postgres
-```
-
-**Результат успешного запуска:**
-```
-Tests run: 20, Failures: 0, Errors: 0, Skipped: 0
-BUILD SUCCESS
-```
-
-### Альтернатива: Использование скриптов
-
-```bash
-# Автоматическая проверка подключения
-./check_db_connection.sh
-
-# Автоматический запуск всех тестов
-./RUN_TESTS.sh
-```
-
-## Если тесты не проходят
-
-1. Проверьте, что PostgreSQL запущен:
+## Подготовка базы данных (однократно)
+1. Создайте пользователя и базу (пример с дефолтными учетными данными):
    ```bash
-   pg_isready
-   # или
-   systemctl status postgresql  # Linux
-   brew services list           # macOS
+   psql -U postgres -c "CREATE USER fooddelivery_user WITH PASSWORD 'fooddelivery_pass';"
+   psql -U postgres -c "CREATE DATABASE food_delivery OWNER fooddelivery_user;"
    ```
-
-2. Проверьте параметры подключения:
-   
-   **macOS (Homebrew):**
-   - URL: `jdbc:postgresql://localhost:5432/food_delivery`
-   - User: ваше имя пользователя (проверьте через `whoami`)
-   - Password: обычно пустой или ваш системный пароль
-
-   **Linux:**
-   - URL: `jdbc:postgresql://localhost:5432/food_delivery`
-   - User: `postgres`
-   - Password: `postgres` (или ваш пароль)
-
-3. Измените параметры при необходимости:
+2. Примените основную схему (все таблицы и индексы теперь в **одном** файле):
    ```bash
-   # macOS
-   mvn test -Ddb.user=$(whoami) -Ddb.password=""
-   
-   # Linux
-   mvn test -Ddb.user=postgres -Ddb.password=postgres
-   
-   # Или с полными параметрами
-   mvn test -Ddb.url=jdbc:postgresql://localhost:5432/food_delivery \
-            -Ddb.user=your_user \
-            -Ddb.password=your_password
+   PGPASSWORD=fooddelivery_pass psql -U fooddelivery_user -d food_delivery -f src/main/resources/sql/007_main_schema.sql
    ```
-
-## Структура тестов
-
-- **SimpleConnectionTest** - самый простой, проверяет только подключение
-- **DatabaseConnectionTest** - тесты класса подключения
-- **ClientRepositoryTest** - тесты работы с клиентами
-- **CartRepositoryTest** - тесты работы с корзинами
-- **DatabaseIntegrationTest** - полные интеграционные тесты
-
-Подробнее см. [TESTING.md](TESTING.md)
-
-# 🧪 Тестирование проекта
-
-## Быстрый старт
-
-### 1. Автоматическая проверка и запуск тестов
-
-```bash
-# Проверка подключения к БД
-./check_db_connection.sh
-
-# Запуск всех тестов
-./RUN_TESTS.sh
-```
-
-### 2. Ручной запуск
-
-#### macOS:
-```bash
-# Создание БД и схемы
-createdb food_delivery
-psql -d food_delivery -f src/main/resources/schema.sql
-
-# Запуск тестов
-mvn test -Ddb.user=$(whoami) -Ddb.password=""
-```
-
-#### Linux:
-```bash
-# Создание БД и схемы
-createdb -U postgres food_delivery
-psql -U postgres -d food_delivery -f src/main/resources/schema.sql
-
-# Запуск тестов
-mvn test -Ddb.user=postgres -Ddb.password=postgres
-```
-
-## Результаты тестов
-
-При успешном запуске вы увидите:
-```
-Tests run: 20, Failures: 0, Errors: 0, Skipped: 0
-BUILD SUCCESS
-```
-
-## Структура тестов
-
-1. **SimpleConnectionTest** - проверка подключения к БД
-2. **DatabaseConnectionTest** - тесты класса DatabaseConnection
-3. **ClientRepositoryTest** - тесты работы с клиентами (7 тестов)
-4. **CartRepositoryTest** - тесты работы с корзинами (5 тестов)
-5. **DatabaseIntegrationTest** - полные интеграционные тесты (3 теста)
-
-**Всего: 20 тестов**
-
-## Что проверяют тесты
-
-✅ Подключение к PostgreSQL  
-✅ CRUD операции для всех сущностей  
-✅ Связи между сущностями (foreign keys)  
-✅ Полные сценарии использования системы  
-✅ Валидация данных  
-✅ Обработка ошибок  
-
-# Инструкция по запуску тестов
-
-## Подготовка
-
-Перед запуском тестов убедитесь, что:
-
-1. **PostgreSQL установлен и запущен**
-2. **База данных создана:**
-   ```sql
-   CREATE DATABASE food_delivery;
-   ```
-
-3. **Схема создана:**
+   После выполнения появятся минимум 11 таблиц: `addresses, working_hours, clients, shops, products, couriers, orders, order_items, carts, cart_items, payments`.
+3. (Опционально) загрузите тестовые данные по категориям (можно повторно, используется `ON CONFLICT DO NOTHING` и фиксированные идентификаторы):
    ```bash
-   psql -U postgres -d food_delivery -f src/main/resources/schema.sql
+   PGPASSWORD=fooddelivery_pass psql -U fooddelivery_user -d food_delivery -f src/main/resources/sql/test_data/000_insert_addresses.sql
+   PGPASSWORD=fooddelivery_pass psql -U fooddelivery_user -d food_delivery -f src/main/resources/sql/test_data/001_insert_working_hours.sql
+   PGPASSWORD=fooddelivery_pass psql -U fooddelivery_user -d food_delivery -f src/main/resources/sql/test_data/002_insert_clients.sql
+   PGPASSWORD=fooddelivery_pass psql -U fooddelivery_user -d food_delivery -f src/main/resources/sql/test_data/003_insert_shops.sql
+   PGPASSWORD=fooddelivery_pass psql -U fooddelivery_user -d food_delivery -f src/main/resources/sql/test_data/004_insert_products.sql
+   PGPASSWORD=fooddelivery_pass psql -U fooddelivery_user -d food_delivery -f src/main/resources/sql/test_data/005_insert_couriers.sql
+   PGPASSWORD=fooddelivery_pass psql -U fooddelivery_user -d food_delivery -f src/main/resources/sql/test_data/006_insert_orders.sql
+   PGPASSWORD=fooddelivery_pass psql -U fooddelivery_user -d food_delivery -f src/main/resources/sql/test_data/007_insert_order_items.sql
+   PGPASSWORD=fooddelivery_pass psql -U fooddelivery_user -d food_delivery -f src/main/resources/sql/test_data/008_insert_carts.sql
+   PGPASSWORD=fooddelivery_pass psql -U fooddelivery_user -d food_delivery -f src/main/resources/sql/test_data/009_insert_cart_items.sql
+   PGPASSWORD=fooddelivery_pass psql -U fooddelivery_user -d food_delivery -f src/main/resources/sql/test_data/010_insert_payments.sql
    ```
+   При необходимости выполните отдельные файлы из `src/main/resources/sql/004_create_order_tables/` (payments, адрес, delivery_time).
 
-## Настройка параметров подключения
+## Настройка подключения
+По умолчанию используется `jdbc:postgresql://localhost:5432/food_delivery`, пользователь `fooddelivery_user`, пароль `fooddelivery_pass`.
+Переопределение:
+- Переменные окружения: `DB_URL`, `DB_USER`, `DB_PASSWORD`
+- JVM-параметры: `-Ddb.url=... -Ddb.user=... -Ddb.password=...`
 
-По умолчанию тесты используют:
-- URL: `jdbc:postgresql://localhost:5432/food_delivery`
-- User: `postgres`
-- Password: `postgres`
+## Запуск тестов вручную
+1. Собрать проект без тестов (поможет заранее выявить проблемы компиляции):
+   ```bash
+   mvn -DskipTests compile
+   ```
+2. Запустить нужные наборы (указывайте свои креды при необходимости):
+   ```bash
+   mvn test -Ddb.user=fooddelivery_user -Ddb.password=fooddelivery_pass -Dtest=ClientRepositoryTest,CartRepositoryTest
+   mvn test -Ddb.user=fooddelivery_user -Ddb.password=fooddelivery_pass -Dtest=ShopProductIntegrationTest
+   mvn test -Ddb.user=fooddelivery_user -Ddb.password=fooddelivery_pass -Dtest=OrderCourierIntegrationTest
+   mvn test -Ddb.user=fooddelivery_user -Ddb.password=fooddelivery_pass -Dtest=OrderInteractionIntegrationTest
+   ```
+   Тестовые данные не очищаются, поэтому прогоны можно повторять поочередно или выборочно.
 
-### Изменение параметров через системные свойства:
+## Запуск в Docker
+- Поднять базу данных (postgres запустится в контейнере `db` и примонтирует volume `postgres_data`). Если вы запускаете вспомогательные скрипты **с хоста**, убедитесь, что `DB_HOST=localhost` (по умолчанию так и есть), потому что hostname `db` виден только внутри docker-сети:
+  ```bash
+  docker compose up -d db
+  ```
+- Применить схему и прогнать тесты внутри контейнера Maven (Java/Maven локально не нужны):
+  ```bash
+  docker compose run --rm tests
+  ```
+  Контейнер `tests` ждет готовности PostgreSQL, накатывает схему через `run_scheme.sh` (берет файлы из примонтированной папки проекта), затем запускает `mvn test` с параметрами из `docker-compose.yml`.
 
-```bash
-mvn test -Ddb.url=jdbc:postgresql://localhost:5432/food_delivery \
-         -Ddb.user=your_user \
-         -Ddb.password=your_password
-```
+- Проверить количество таблиц после подготовки схемы в контейнере:
+  ```bash
+  docker exec -it food-delivery-db psql -U fooddelivery_user -d food_delivery -c "\dt"
+  ```
+  Норма — 11 таблиц (`addresses, cart_items, carts, clients, couriers, order_items, orders, payments, products, shops, working_hours`).
 
-## Запуск тестов
+## Полезное
+- Проверка подключения: `./check_db_connection.sh`
+- Запуск схемы целиком: `./run_scheme.sh` (если нужна полная переинициализация)
 
-### Запуск всех тестов:
-```bash
-mvn test
-```
+## Очистка/обновление БД перед повторным запуском
+Если нужно сбросить данные и применить схему заново:
+1. Остановите приложение/тесты, чтобы соединения не держали блокировки.
+2. Выполните полный скрипт:
+   ```bash
+   PGPASSWORD=fooddelivery_pass psql -U fooddelivery_user -d food_delivery -f src/main/resources/sql/000_drop_tables.sql
+   PGPASSWORD=fooddelivery_pass psql -U fooddelivery_user -d food_delivery -f src/main/resources/sql/007_main_schema.sql
+   ```
+   При необходимости повторно прогоните файлы с тестовыми данными из `src/main/resources/sql/test_data/` в нужном порядке.
+3. Запустите приложение или нужные тесты с теми же параметрами подключения.
 
-### Запуск конкретного теста:
-```bash
-mvn test -Dtest=SimpleConnectionTest
-mvn test -Dtest=DatabaseConnectionTest
-mvn test -Dtest=ClientRepositoryTest
-mvn test -Dtest=CartRepositoryTest
-mvn test -Dtest=DatabaseIntegrationTest
-```
-
-### Запуск через IDE:
-1. Откройте проект в IntelliJ IDEA или Eclipse
-2. Найдите тестовый класс в папке `src/test/java`
-3. Правой кнопкой -> Run Test
-
-## Структура тестов
-
-### 1. SimpleConnectionTest
-**Самый простой тест** - проверяет только подключение к БД.
-**Запустите его первым**, чтобы убедиться, что подключение работает.
-
-### 2. DatabaseConnectionTest
-Проверяет работу класса `DatabaseConnection`:
-- Тестовое подключение
-- Получение подключения
-- Закрытие подключения
-- Установка параметров
-
-### 3. ClientRepositoryTest
-Интеграционные тесты для `ClientRepository`:
-- Сохранение клиента
-- Поиск по ID, телефону, email
-- Обновление клиента
-- Получение всех клиентов
-- Удаление клиента
-
-### 4. CartRepositoryTest
-Тесты для работы с корзинами:
-- Создание корзины
-- Добавление элементов
-- Получение элементов
-- Очистка корзины
-
-### 5. DatabaseIntegrationTest
-**Полные интеграционные тесты** - проверяют работу всей системы:
-- Полный цикл: клиент -> корзина -> товары
-- Создание магазина с продуктами
-- Создание курьера и заказа
-
-## Результаты тестов
-
-### Успешный запуск:
-```
-✅ Подключение к базе данных успешно!
-Tests run: X, Failures: 0, Errors: 0, Skipped: 0
-```
-
-### Ошибки подключения:
-Если тесты не проходят из-за подключения, проверьте:
-1. PostgreSQL запущен: `pg_isready` или `systemctl status postgresql`
-2. База данных существует: `psql -l | grep food_delivery`
-3. Схема создана: подключитесь к БД и проверьте таблицы: `\dt`
-4. Параметры подключения корректны
-
-## Отладка
-
-### Просмотр логов:
-Тесты используют SLF4J для логирования. Для более детальных логов можно настроить `logback.xml` или `log4j2.xml`.
-
-### Проверка данных в БД:
-```sql
--- Подключитесь к БД
-psql -U postgres -d food_delivery
-
--- Проверьте таблицы
-\dt
-
--- Проверьте данные
-SELECT * FROM clients;
-SELECT * FROM carts;
-SELECT * FROM cart_items;
-```
-
-## Очистка тестовых данных
-
-Тесты автоматически очищают созданные данные после выполнения. Если что-то пошло не так, можно очистить вручную:
-
-```sql
--- Осторожно! Удалит все данные
-TRUNCATE TABLE cart_items, carts, orders, clients, couriers, products, shops, addresses, working_hours CASCADE;
-```
-
-## Примечания
-
-- Тесты создают реальные данные в БД, но автоматически их удаляют
-- Рекомендуется использовать отдельную тестовую БД для production окружения
-- Некоторые тесты зависят от порядка выполнения (используют `@Order`)
-
-
-
+### Другие способы создать/удалить таблицы
+- **Скрипт запуска схемы:** `./run_scheme.sh` — обёртка над `psql`, последовательно вызывает `000_drop_tables.sql` и единый файл `007_main_schema.sql` из каталога `src/main/resources/sql/`.
+  - Если запускаете **на хосте**, оставьте `DB_HOST=localhost` (значение по умолчанию).
+  - Если запускаете **внутри Docker/Compose**, передайте `DB_HOST=db` (в `docker-compose.yml` это уже сделано через переменные окружения).
+- **Через psql в интерактивном режиме:**
+  ```bash
+  PGPASSWORD=fooddelivery_pass psql -U fooddelivery_user -d food_delivery
+  food_delivery=> \i src/main/resources/sql/000_drop_tables.sql
+  food_delivery=> \i src/main/resources/sql/007_main_schema.sql
+  ```
+  Команда `\i` подключает файлы относительно текущего каталога.
+- **Добавление тестовых данных:** любые скрипты из `src/main/resources/sql/test_data/` можно запускать выборочно после основного файла схемы.
+- **Docker Compose БД:** если база запущена в контейнере, подключитесь в него и выполните те же команды (SQL файлы доступны по пути `/app/src/main/resources/sql` благодаря volume):
+  ```bash
+  docker exec -it food-delivery-db psql -U fooddelivery_user -d food_delivery -f /app/src/main/resources/sql/000_drop_tables.sql
+  docker exec -it food-delivery-db psql -U fooddelivery_user -d food_delivery -f /app/src/main/resources/sql/007_main_schema.sql
+  ```

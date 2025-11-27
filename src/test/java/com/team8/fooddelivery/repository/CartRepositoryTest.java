@@ -1,7 +1,13 @@
 package com.team8.fooddelivery.repository;
 
-import com.team8.fooddelivery.model.Cart;
-import com.team8.fooddelivery.model.CartItem;
+import com.team8.fooddelivery.model.product.Cart;
+import com.team8.fooddelivery.model.product.CartItem;
+import com.team8.fooddelivery.model.client.Client;
+import com.team8.fooddelivery.model.client.ClientStatus;
+import com.team8.fooddelivery.model.product.Product;
+import com.team8.fooddelivery.model.product.ProductCategory;
+import com.team8.fooddelivery.model.shop.Shop;
+import com.team8.fooddelivery.model.shop.ShopStatus;
 import com.team8.fooddelivery.util.DatabaseConnection;
 import org.junit.jupiter.api.*;
 
@@ -41,34 +47,36 @@ public class CartRepositoryTest {
         productRepository = new ProductRepository();
         shopRepository = new ShopRepository();
 
+        long suffix = System.currentTimeMillis();
+
         // Создаем тестового клиента для корзины
-        com.team8.fooddelivery.model.Client testClient = com.team8.fooddelivery.model.Client.builder()
-                .name("Тест Клиент для Корзины")
-                .phone("+79999999999")
-                .email("carttest@example.com")
+        Client testClient = Client.builder()
+                .name("Тест Клиент для Корзины " + suffix)
+                .phone("+7999" + (suffix % 1_000_0000))
+                .email("carttest" + suffix + "@example.com")
                 .passwordHash("hash")
-                .status(com.team8.fooddelivery.model.ClientStatus.ACTIVE)
+                .status(ClientStatus.ACTIVE)
                 .isActive(true)
                 .orderHistory(List.of())
                 .build();
         testClientId = clientRepository.save(testClient);
 
         // Создаем тестовый магазин и продукт
-        com.team8.fooddelivery.model.Shop testShop = new com.team8.fooddelivery.model.Shop();
-        testShop.setNaming("Тестовый Магазин");
-        testShop.setEmailForAuth("testshop@example.com");
-        testShop.setPhoneForAuth("+79998887766");
-        testShop.setStatus(com.team8.fooddelivery.model.ShopStatus.APPROVED);
+        Shop testShop = new Shop();
+        testShop.setNaming("Тестовый Магазин " + suffix);
+        testShop.setEmailForAuth("testshop" + suffix + "@example.com");
+        testShop.setPhoneForAuth("+7888" + (suffix % 1_000_0000));
+        testShop.setStatus(ShopStatus.APPROVED);
         testShop.setPassword("password");
         testShopId = shopRepository.save(testShop);
 
-        com.team8.fooddelivery.model.Product testProduct = new com.team8.fooddelivery.model.Product(
+        Product testProduct = new Product(
                 null,
                 "Тестовый продукт",
                 "Описание",
                 100.0,
                 200.0,
-                com.team8.fooddelivery.model.ProductCategory.OTHER,
+                ProductCategory.OTHER,
                 true,
                 java.time.Duration.ofMinutes(10)
         );

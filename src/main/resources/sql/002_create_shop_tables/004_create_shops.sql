@@ -1,4 +1,4 @@
-CREATE TABLE shops (
+CREATE TABLE IF NOT EXISTS shops (
     shop_id BIGSERIAL PRIMARY KEY,
     naming VARCHAR(200) NOT NULL,
     description TEXT,
@@ -7,7 +7,7 @@ CREATE TABLE shops (
     phone_for_auth VARCHAR(20) UNIQUE NOT NULL,
     public_phone VARCHAR(20),
     status VARCHAR(50) NOT NULL,
-    address_id BIGINT REFERENCES addresses(id),
+    address_id BIGINT,
     working_hours_id BIGINT,
     owner_name VARCHAR(200),
     owner_contact_phone VARCHAR(20),

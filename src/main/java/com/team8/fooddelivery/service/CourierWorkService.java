@@ -1,6 +1,6 @@
 package com.team8.fooddelivery.service;
 
-import com.team8.fooddelivery.model.Order;
+import com.team8.fooddelivery.model.order.Order;
 import java.util.List;
 
 public interface CourierWorkService {

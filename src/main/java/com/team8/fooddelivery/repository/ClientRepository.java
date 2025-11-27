@@ -1,7 +1,7 @@
 package com.team8.fooddelivery.repository;
 
-import com.team8.fooddelivery.model.Client;
-import com.team8.fooddelivery.model.ClientStatus;
+import com.team8.fooddelivery.model.client.Client;
+import com.team8.fooddelivery.model.client.ClientStatus;
 import com.team8.fooddelivery.util.DatabaseConnection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

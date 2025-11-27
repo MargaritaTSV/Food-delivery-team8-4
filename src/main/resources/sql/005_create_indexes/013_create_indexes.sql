@@ -1,0 +1,11 @@
+CREATE INDEX idx_clients_phone ON clients(phone);
+CREATE INDEX idx_clients_email ON clients(email);
+CREATE INDEX idx_shops_email_auth ON shops(email_for_auth);
+CREATE INDEX idx_shops_phone_auth ON shops(phone_for_auth);
+CREATE INDEX idx_couriers_phone ON couriers(phone_number);
+CREATE INDEX idx_carts_client_id ON carts(client_id);
+CREATE INDEX idx_orders_customer_id ON orders(customer_id);
+CREATE INDEX idx_orders_courier_id ON orders(courier_id);
+CREATE INDEX idx_orders_status ON orders(status);
+CREATE INDEX idx_products_shop_id ON products(shop_id);
+CREATE INDEX idx_cart_items_cart_id ON cart_items(cart_id);

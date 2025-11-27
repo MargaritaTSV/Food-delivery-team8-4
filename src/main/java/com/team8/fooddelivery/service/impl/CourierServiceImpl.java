@@ -1,9 +1,9 @@
 package com.team8.fooddelivery.service.impl;
 
-import com.team8.fooddelivery.model.Courier;
-import com.team8.fooddelivery.model.CourierStatus;
-import com.team8.fooddelivery.model.Order;
-import com.team8.fooddelivery.model.OrderStatus;
+import com.team8.fooddelivery.model.courier.Courier;
+import com.team8.fooddelivery.model.courier.CourierStatus;
+import com.team8.fooddelivery.model.order.Order;
+import com.team8.fooddelivery.model.order.OrderStatus;
 import com.team8.fooddelivery.repository.CourierRepository;
 import com.team8.fooddelivery.repository.OrderRepository;
 import com.team8.fooddelivery.service.CourierManagementService;

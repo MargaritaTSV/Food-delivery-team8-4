@@ -1,6 +1,6 @@
 package com.team8.fooddelivery.repository;
 
-import com.team8.fooddelivery.model.WorkingHours;
+import com.team8.fooddelivery.model.shop.WorkingHours;
 import com.team8.fooddelivery.util.DatabaseConnection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

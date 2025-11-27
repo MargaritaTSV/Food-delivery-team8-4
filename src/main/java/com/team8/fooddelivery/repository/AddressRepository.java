@@ -26,8 +26,8 @@ public class AddressRepository {
             stmt.setString(5, address.getApartment());
             stmt.setString(6, address.getEntrance());
             stmt.setObject(7, address.getFloor(), Types.INTEGER);
-            stmt.setDouble(8, address.getLatitude());
-            stmt.setDouble(9, address.getLongitude());
+            stmt.setObject(8, address.getLatitude(), Types.DOUBLE);
+            stmt.setObject(9, address.getLongitude(), Types.DOUBLE);
             stmt.setString(10, address.getAddressNote());
             stmt.setString(11, address.getDistrict());
 
@@ -71,8 +71,8 @@ public class AddressRepository {
             stmt.setString(5, address.getApartment());
             stmt.setString(6, address.getEntrance());
             stmt.setObject(7, address.getFloor(), Types.INTEGER);
-            stmt.setDouble(8, address.getLatitude());
-            stmt.setDouble(9, address.getLongitude());
+            stmt.setObject(8, address.getLatitude(), Types.DOUBLE);
+            stmt.setObject(9, address.getLongitude(), Types.DOUBLE);
             stmt.setString(10, address.getAddressNote());
             stmt.setString(11, address.getDistrict());
             stmt.setLong(12, id);
@@ -103,8 +103,8 @@ public class AddressRepository {
                 .apartment(rs.getString("apartment"))
                 .entrance(rs.getString("entrance"))
                 .floor(rs.getObject("floor", Integer.class))
-                .latitude(rs.getDouble("latitude"))
-                .longitude(rs.getDouble("longitude"))
+                .latitude(rs.getObject("latitude", Double.class))
+                .longitude(rs.getObject("longitude", Double.class))
                 .addressNote(rs.getString("address_note"))
                 .district(rs.getString("district"))
                 .build();
