@@ -9,8 +9,7 @@
 
 ### Текущая ситуация:
 ```
-SimpleConnectionTest.java → postgres:postgres ✓
-OrderCourierIntegrationTest.java → fooddelivery_user:fooddelivery_pass ✗
+Все тесты должны использовать единые данные: fooddelivery_user / fooddelivery_pass
 ```
 
 ### ДЕЙСТВИЕ: Создать `TestDatabaseConfig.java`
@@ -23,8 +22,8 @@ package com.team8.fooddelivery.util;
 public class TestDatabaseConfig {
     public static final String DB_URL = System.getProperty("db.url",
             "jdbc:postgresql://localhost:5432/food_delivery");
-    public static final String DB_USER = System.getProperty("db.user", "postgres");
-    public static final String DB_PASSWORD = System.getProperty("db.password", "postgres");
+    public static final String DB_USER = System.getProperty("db.user", "fooddelivery_user");
+    public static final String DB_PASSWORD = System.getProperty("db.password", "fooddelivery_pass");
 
     public static void initialize() {
         DatabaseConnection.setConnectionParams(DB_URL, DB_USER, DB_PASSWORD);
@@ -43,8 +42,8 @@ public class TestDatabaseConfig {
 @BeforeAll
 static void setupDatabaseConnection() {
     String dbUrl = System.getProperty("db.url", "jdbc:postgresql://localhost:5432/food_delivery");
-    String dbUser = System.getProperty("db.user", "postgres");
-    String dbPassword = System.getProperty("db.password", "postgres");
+    String dbUser = System.getProperty("db.user", "fooddelivery_user");
+    String dbPassword = System.getProperty("db.password", "fooddelivery_pass");
     DatabaseConnection.setConnectionParams(dbUrl, dbUser, dbPassword);
     // ...
 }
