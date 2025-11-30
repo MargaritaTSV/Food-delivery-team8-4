@@ -24,17 +24,17 @@
                     <h3>${product.name}</h3>
                     <p class="description">${product.description}</p>
                     <p class="price">${product.price} ₽</p>
-                    <button class="btn btn-add-cart" data-product-id="${product.id}">
-                        В корзину
-                    </button>
+                    <form method="POST" action="${pageContext.request.contextPath}/cart/add">
+                        <input type="hidden" name="productId" value="${product.id}">
+                        <label class="sr-only" for="qty-${product.id}">Количество</label>
+                        <input id="qty-${product.id}" type="number" name="quantity" min="1" value="1">
+                        <button type="submit" class="btn btn-primary">В корзину</button>
+                    </form>
                 </div>
             </c:forEach>
         </div>
     </main>
 
     <%@ include file="/WEB-INF/jsp/layout/footer.jsp" %>
-
-    <script src="${pageContext.request.contextPath}/resources/js/cart.js"></script>
 </body>
 </html>
-

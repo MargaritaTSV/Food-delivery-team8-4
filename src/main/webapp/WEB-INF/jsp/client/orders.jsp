@@ -53,8 +53,6 @@
     </main>
 
     <%@ include file="/WEB-INF/jsp/layout/footer.jsp" %>
-
-    <script src="${pageContext.request.contextPath}/resources/js/main.js"></script>
 </body>
 </html>
 
