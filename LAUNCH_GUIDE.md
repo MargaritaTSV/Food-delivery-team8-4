@@ -29,12 +29,11 @@ psql -U postgres
 -- Создайте БД
 CREATE DATABASE food_delivery;
 
--- Создайте пользователя
-CREATE USER fd_user WITH PASSWORD 'fd_password_123';
+CREATE USER fooddelivery_user WITH PASSWORD 'fooddelivery_pass';
 
 -- Выдайте права
-GRANT ALL PRIVILEGES ON DATABASE food_delivery TO fd_user;
-GRANT ALL ON SCHEMA public TO fd_user;
+GRANT ALL PRIVILEGES ON DATABASE food_delivery TO fooddelivery_user;
+GRANT ALL ON SCHEMA public TO fooddelivery_user;
 
 -- Выход
 \q
@@ -45,10 +44,10 @@ GRANT ALL ON SCHEMA public TO fd_user;
 cd /Users/smolevanataliia/Desktop/Food-delivery-team8-main
 
 # Запустите SQL скрипты
-psql -U fd_user -d food_delivery -f src/main/resources/sql/000_drop_tables.sql
-psql -U fd_user -d food_delivery -f src/main/resources/sql/001_create_base_tables/001_create_addresses.sql
-psql -U fd_user -d food_delivery -f src/main/resources/sql/001_create_base_tables/002_create_working_hours.sql
-psql -U fd_user -d food_delivery -f src/main/resources/sql/001_create_base_tables/003_create_clients.sql
+psql -U fooddelivery_user -d food_delivery -f src/main/resources/sql/000_drop_tables.sql
+psql -U fooddelivery_user -d food_delivery -f src/main/resources/sql/001_create_base_tables/001_create_addresses.sql
+psql -U fooddelivery_user -d food_delivery -f src/main/resources/sql/001_create_base_tables/002_create_working_hours.sql
+psql -U fooddelivery_user -d food_delivery -f src/main/resources/sql/001_create_base_tables/003_create_clients.sql
 # ... остальные скрипты
 ```
 
@@ -111,8 +110,8 @@ cp /Users/smolevanataliia/Desktop/Food-delivery-team8-main/target/food-delivery.
               type="javax.sql.DataSource"
               driverClassName="org.postgresql.Driver"
               url="jdbc:postgresql://localhost:5432/food_delivery"
-              username="fd_user"
-              password="fd_password_123"
+              username="fooddelivery_user"
+              password="fooddelivery_pass"
               maxActive="20"
               maxIdle="10"
               maxWait="-1"/>

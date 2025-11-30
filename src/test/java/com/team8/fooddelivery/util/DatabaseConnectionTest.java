@@ -14,8 +14,8 @@ public class DatabaseConnectionTest {
 
   // Единые учетные данные (совместимость со скриптами)
   private static final String DEFAULT_DB_URL = "jdbc:postgresql://localhost:5432/food_delivery";
-  private static final String DEFAULT_DB_USER = "postgres";
-  private static final String DEFAULT_DB_PASSWORD = "postgres";
+  private static final String DEFAULT_DB_USER = "fooddelivery_user";
+  private static final String DEFAULT_DB_PASSWORD = "fooddelivery_pass";
 
   @BeforeEach
   void setUp() {
@@ -50,11 +50,11 @@ public class DatabaseConnectionTest {
       System.err.println("\n❌ Не удалось подключиться к БД с параметрами:");
       System.err.println("URL: " + DEFAULT_DB_URL);
       System.err.println("User: " + DEFAULT_DB_USER);
-      System.err.println("\nВыполните настройку: ./setup_database.sh");
+      System.err.println("\nПроверьте, что контейнер PostgreSQL запущен (docker compose up -d db) и схема применена через psql.");
     }
 
     assertTrue(connected, "Подключение к базе данных должно быть успешным. " +
-        "Выполните ./setup_database.sh для настройки БД");
+        "Убедитесь, что база поднята и накатана схема src/main/resources/sql/007_main_schema.sql");
   }
 
   @Test

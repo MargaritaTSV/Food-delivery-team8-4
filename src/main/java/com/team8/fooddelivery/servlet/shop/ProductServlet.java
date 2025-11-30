@@ -13,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 
@@ -147,16 +148,16 @@ public class ProductServlet extends HttpServlet {
             String categoryStr = request.getParameter("category");
             ProductCategory category = ProductCategory.valueOf(categoryStr);
             boolean isAvailable = request.getParameter("isAvailable") != null;
-            int cookingTime = Integer.parseInt(request.getParameter("cookingTime") != null ? 
+            int cookingTime = Integer.parseInt(request.getParameter("cookingTime") != null ?
                     request.getParameter("cookingTime") : "0");
-            
+
             Product product = Product.builder()
                     .name(name)
                     .description(description)
                     .price(price)
                     .category(category)
                     .available(isAvailable)
-                    .cookingTimeMinutes(cookingTime)
+                    .cookingTimeMinutes(Duration.ofMinutes(cookingTime))
                     .build();
             
             Product savedProduct = productService.addProduct(shopId, product);
@@ -190,9 +191,9 @@ public class ProductServlet extends HttpServlet {
             String categoryStr = request.getParameter("category");
             ProductCategory category = ProductCategory.valueOf(categoryStr);
             boolean isAvailable = request.getParameter("isAvailable") != null;
-            int cookingTime = Integer.parseInt(request.getParameter("cookingTime") != null ? 
+            int cookingTime = Integer.parseInt(request.getParameter("cookingTime") != null ?
                     request.getParameter("cookingTime") : "0");
-            
+
             Product product = Product.builder()
                     .productId(productId)
                     .name(name)
@@ -200,7 +201,7 @@ public class ProductServlet extends HttpServlet {
                     .price(price)
                     .category(category)
                     .available(isAvailable)
-                    .cookingTimeMinutes(cookingTime)
+                    .cookingTimeMinutes(Duration.ofMinutes(cookingTime))
                     .build();
             
             Product updatedProduct = productService.updateProduct(shopId, productId, product);
