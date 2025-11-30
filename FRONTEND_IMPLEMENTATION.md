@@ -63,22 +63,14 @@
 </dependency>
 ```
 
-### Шаг 2: Обновить pom.xml для WAR packaging
+### Шаг 2: Собираем исполняемый JAR с embedded Tomcat
 
-**Убедись что есть:**
+**В pom.xml должно быть:**
 
 ```xml
-<packaging>war</packaging>
+<packaging>jar</packaging>
 
-<build>
-    <plugins>
-        <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-war-plugin</artifactId>
-            <version>3.3.2</version>
-        </plugin>
-    </plugins>
-</build>
+<!-- tomcat-embed-core + tomcat-embed-jasper без scope provided -->
 ```
 
 ---

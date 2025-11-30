@@ -361,36 +361,27 @@ src/main/webapp/
 ## 🚀 Как запустить
 
 ### 1️⃣ Требования
-- Java 11+
-- Maven 3.6+
+- Java 17+
+- Maven 3.9+
 - PostgreSQL 12+
-- Tomcat 10.1+ (для Deploy)
 
 ### 2️⃣ Компиляция и сборка
 ```bash
 cd /Users/smolevanataliia/Desktop/Food-delivery-team8-main
-
-# Очистка и компиляция
-mvn clean compile
-
-# Сборка WAR архива
-mvn package
-
-# Результат: target/food-delivery.war
+mvn clean package -DskipTests
+# Результат: target/food-delivery.jar
 ```
 
-### 3️⃣ Развертывание на Tomcat
+### 3️⃣ Запуск (embedded Tomcat)
 ```bash
-# Скопировать WAR на Tomcat
-cp target/food-delivery.war $TOMCAT_HOME/webapps/
-
-# Запустить Tomcat
-$TOMCAT_HOME/bin/catalina.sh run
+java -jar target/food-delivery.jar
+# или другой порт
+PORT=9090 java -jar target/food-delivery.jar
 ```
 
 ### 4️⃣ Открыть в браузере
 ```
-http://localhost:8080/food-delivery/
+http://localhost:8080/
 ```
 
 ---

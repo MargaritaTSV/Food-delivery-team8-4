@@ -1,397 +1,49 @@
-# 🚀 ПОЛНАЯ ИНСТРУКЦИЯ ЗАПУСКА FOOD DELIVERY
+# ⚡️ Быстрый старт (JAR + embedded Tomcat)
 
-## 📋 СОДЕРЖАНИЕ
-1. [Требования](#требования)
-2. [Скачивание Tomcat](#скачивание-tomcat)
-3. [Компиляция](#компиляция)
-4. [Запуск](#запуск)
-5. [Тестирование](#тестирование)
-6. [Решение проблем](#решение-проблем)
+Этот гайд показывает, как развернуть фронтенд и сервер без дополнительных скриптов и без внешнего Tomcat.
 
----
+## 1. Требования
+- Java 17 (`java -version`)
+- Maven 3.9+ (`mvn -version`)
+- PostgreSQL 12+ (`psql --version`)
+- Доступ к Bash/Terminal
 
-## 📦 ТРЕБОВАНИЯ
-
-Убедитесь, что установлены:
-
-### Java JDK 11+
+## 2. Подготовьте базу данных
 ```bash
-java -version
-# Должно показать: openjdk version "11" или выше
+psql -U postgres -c "CREATE USER fooddelivery_user WITH PASSWORD 'fooddelivery_pass';" || true
+psql -U postgres -c "CREATE DATABASE food_delivery OWNER fooddelivery_user;" || true
+PGPASSWORD=fooddelivery_pass psql -U fooddelivery_user -d food_delivery -f src/main/resources/sql/007_main_schema.sql
 ```
+*(Опционально добавьте тестовые данные файлами из `src/main/resources/sql/test_data/` в указанном порядке).* 
 
-**Если не установлена:**
-- Скачайте с https://www.oracle.com/java/technologies/downloads/
-- Или используйте Homebrew на macOS:
+## 3. Соберите исполняемый JAR
 ```bash
-brew install java
+mvn clean package -DskipTests
+# Результат: target/food-delivery.jar
 ```
 
-### Maven 3.6+
+## 4. Запустите приложение
 ```bash
-mvn -version
-# Должно показать: Apache Maven 3.6.0 или выше
+java -jar target/food-delivery.jar
+# или другой порт
+PORT=9090 java -jar target/food-delivery.jar
 ```
+Откройте в браузере `http://localhost:8080/` и используйте ссылки Клиент/Магазин/Курьер.
 
-**Если не установлена:**
+## 5. Частые проблемы
+- **Порт занят:** `lsof -i :8080` → `kill -9 <PID>` или `PORT=8081 java -jar ...`.
+- **Нет JAR:** повторите `mvn clean package -DskipTests` и проверьте `target/food-delivery.jar`.
+- **Схема не накатывается:** выполните `src/main/resources/sql/000_drop_tables.sql` под владельцем таблиц, затем снова запустите `007_main_schema.sql` от имени `fooddelivery_user`.
+
+## 6. Остановка и перезапуск
 ```bash
-brew install maven  # На macOS
+pkill -f "food-delivery.jar" || true
+java -jar target/food-delivery.jar
 ```
 
-### PostgreSQL 12+ (опционально, если используется БД)
-```bash
-psql --version
-```
-
----
-
-## 🐱 СКАЧИВАНИЕ TOMCAT
-
-### 1️⃣ Скачайте Tomcat 10.1+
-Перейдите на http://tomcat.apache.org/download-10.cgi и скачайте:
-- **Binary Distributions → Core → apache-tomcat-10.1.x.tar.gz**
-
-### 2️⃣ Распакуйте Tomcat
-```bash
-# Перейдите в папку с загрузками
-cd ~/Downloads
-
-# Распакуйте архив
-tar -xzf apache-tomcat-10.1.x.tar.gz
-
-# Переместите в удобное место
-mv apache-tomcat-10.1.x /Users/ВашЕйм/tomcat
-
-# Или установите в /Library
-sudo mv apache-tomcat-10.1.x /Library/Tomcat
-```
-
-### 3️⃣ Установите переменную окружения
-```bash
-# Отредактируйте ~/.zshrc (или ~/.bash_profile)
-nano ~/.zshrc
-
-# Добавьте в конец файла:
-export TOMCAT_HOME="/Users/ВашЕйм/tomcat"
-export PATH="$TOMCAT_HOME/bin:$PATH"
-
-# Сохраните (Ctrl+X, Y, Enter)
-
-# Перезагрузите конфиг
-source ~/.zshrc
-
-# Проверьте
-echo $TOMCAT_HOME
-```
-
----
-
-## 🔨 КОМПИЛЯЦИЯ
-
-### Шаг 1: Перейдите в директорию проекта
-```bash
-cd /Users/smolevanataliia/Desktop/Food-delivery-team8-main
-```
-
-### Шаг 2: Очистка старых файлов
-```bash
-mvn clean
-```
-
-### Шаг 3: Компиляция
-```bash
-mvn compile
-```
-
-Должны увидеть:
-```
-[INFO] BUILD SUCCESS
-```
-
-### Шаг 4: Сборка WAR архива
-```bash
-mvn package -DskipTests
-```
-
-**Результат:**
-```
-✅ Создан файл: target/food-delivery.war
-```
-
----
-
-## 🚀 ЗАПУСК
-
-### Способ 1: АВТОМАТИЧЕСКИЙ (рекомендуется)
-
-#### На macOS/Linux:
-
-```bash
-# 1. Скопируйте WAR на Tomcat
-cp /Users/smolevanataliia/Desktop/Food-delivery-team8-main/target/food-delivery.war \
-   $TOMCAT_HOME/webapps/
-
-# 2. Запустите Tomcat
-$TOMCAT_HOME/bin/catalina.sh run
-```
-
-#### На Windows (CMD):
-
-```cmd
-REM 1. Скопируйте WAR
-copy "C:\Users\YourName\Desktop\Food-delivery-team8-main\target\food-delivery.war" "%TOMCAT_HOME%\webapps\"
-
-REM 2. Запустите Tomcat
-"%TOMCAT_HOME%\bin\catalina.bat" run
-```
-
-### Способ 2: ФОНОВЫЙ ЗАПУСК
-
-```bash
-# Запустить в фоне
-$TOMCAT_HOME/bin/catalina.sh start
-
-# Проверить статус
-tail -f $TOMCAT_HOME/logs/catalina.out
-
-# Остановить
-$TOMCAT_HOME/bin/catalina.sh stop
-```
-
----
-
-## 3️⃣ ОТКРОЙТЕ В БРАУЗЕРЕ
-
-После того как Tomcat стартовал (должны увидеть сообщение `Server startup in XXX ms`):
-
-```
-http://localhost:8080/food-delivery/
-```
-
-**Должна открыться главная страница с кнопками:**
-- 👤 Клиент
-- 🏪 Магазин  
-- 🚴 Курьер
-
----
-
-## 🧪 ТЕСТИРОВАНИЕ
-
-### Тест 1: Регистрация клиента
-```
-1. Нажмите "Клиент"
-2. Нажмите "Зарегистрироваться"
-3. Заполните форму:
-   - Имя: Иван Иванов
-   - Email: ivan@example.com
-   - Телефон: 89991112233
-   - Город: Москва
-   - Пароль: Password123!
-4. Нажмите "Зарегистрироваться"
-✅ Должны попасть на главную клиента
-```
-
-### Тест 2: Логин курьера
-```
-1. Нажмите "Курьер"
-2. Введите:
-   - Телефон: 89998889900
-   - Пароль: CourierPass123!
-3. Нажмите "Войти"
-✅ Должны попасть на dashboard курьера
-```
-
-### Тест 3: Регистрация магазина
-```
-1. Нажмите "Магазин"
-2. Нажмите "Зарегистрировать"
-3. Заполните форму регистрации
-4. Нажмите "Зарегистрировать"
-✅ Должно показать сообщение об успехе
-```
-
----
-
-## 🆘 РЕШЕНИЕ ПРОБЛЕМ
-
-### ❌ Ошибка: "Port 8080 already in use"
-
-```bash
-# Найдите процесс на порту 8080
-lsof -i :8080
-
-# Завершите процесс (замените 12345 на PID)
-kill -9 12345
-
-# ИЛИ используйте другой порт
-# Отредактируйте: $TOMCAT_HOME/conf/server.xml
-# Найдите: <Connector port="8080"
-# Измените на: <Connector port="8081"
-```
-
-### ❌ Ошибка: "mvn command not found"
-
-```bash
-# Установите Maven
-brew install maven
-
-# Проверьте
-mvn -version
-```
-
-### ❌ Ошибка: "java command not found"
-
-```bash
-# Установите Java
-brew install java
-
-# Установите переменную окружения
-export JAVA_HOME=$(/usr/libexec/java_home)
-
-# Добавьте в ~/.zshrc
-echo 'export JAVA_HOME=$(/usr/libexec/java_home)' >> ~/.zshrc
-source ~/.zshrc
-```
-
-### ❌ Ошибка: "BUILD FAILURE"
-
-```bash
-# Очистите и попробуйте заново
-mvn clean
-
-# Удалите кеш
-rm -rf ~/.m2/repository
-
-# Скомпилируйте заново
-mvn compile
-
-# Соберите
-mvn package -DskipTests
-```
-
-### ❌ Ошибка: "HTTP 404 - Not Found"
-
-```bash
-# Проверьте что WAR распакован
-ls -la $TOMCAT_HOME/webapps/food-delivery/
-
-# Проверьте логи Tomcat
-tail -f $TOMCAT_HOME/logs/catalina.out
-
-# Убедитесь что URL правильный
-http://localhost:8080/food-delivery/
-(не забудьте /food-delivery/)
-```
-
-### ❌ Ошибка: "Database connection refused"
-
-Если вы используете PostgreSQL:
-```bash
-# Проверьте что БД запущена
-psql -U postgres
-
-# Или запустите БД
-brew services start postgresql
-```
-
----
-
-## ✅ ПРОВЕРКА УСПЕШНОГО ЗАПУСКА
-
-### 1. Tomcat запущен?
-```bash
-curl http://localhost:8080/
-# Должен вернуть HTML страницу
-```
-
-### 2. Приложение доступно?
-```bash
-curl http://localhost:8080/food-delivery/
-# Должен вернуть HTML главной страницы
-```
-
-### 3. Логи в порядке?
-```bash
-tail -50 $TOMCAT_HOME/logs/catalina.out
-# Должны увидеть "Server startup in"
-```
-
----
-
-## 📊 ПОЛЕЗНЫЕ КОМАНДЫ
-
-### Просмотр логов
-```bash
-# Последние 50 строк
-tail -50 $TOMCAT_HOME/logs/catalina.out
-
-# Следить в реальном времени
-tail -f $TOMCAT_HOME/logs/catalina.out
-
-# Всё содержимое
-cat $TOMCAT_HOME/logs/catalina.out
-```
-
-### Перезагрузка приложения
-```bash
-# Без перезагрузки Tomcat
-rm -rf $TOMCAT_HOME/webapps/food-delivery*
-cp target/food-delivery.war $TOMCAT_HOME/webapps/
-# Tomcat автоматически распакует новый WAR
-```
-
-### Остановка Tomcat
-```bash
-# Корректная остановка
-$TOMCAT_HOME/bin/catalina.sh stop
-
-# Ждёте пока завершится...
-# Если зависнет:
-$TOMCAT_HOME/bin/catalina.sh stop -force
-```
-
----
-
-## 📱 БРАУЗЕРЫ
-
-Рекомендуемые браузеры:
-- ✅ Chrome 90+
-- ✅ Firefox 88+
-- ✅ Safari 14+
-- ✅ Edge 90+
-
----
-
-## 🎯 NEXT STEPS
-
-После успешного запуска:
-
-1. **Изучите функции:**
-   - Создайте учётную запись клиента
-   - Зарегистрируйте магазин
-   - Логинитесь как курьер
-
-2. **Проверьте все страницы:**
-   - Профиль
-   - Товары
-   - Корзина
-   - Заказы
-   - История
-
-3. **Читайте документацию:**
-   - README_IMPLEMENTATION.md
-   - ANSWERS_TO_QUESTIONS.md
-
----
-
-## 📞 КОНТАКТЫ И ПОДДЕРЖКА
-
-Если что-то не работает:
-1. Проверьте логи: `tail -f $TOMCAT_HOME/logs/catalina.out`
-2. Прочитайте раздел "Решение проблем" выше
-3. Убедитесь что все требования установлены
-
----
-
-**✅ Удачи!** 🎉
-
+## 7. Минимальные проверки
+- Регистрация клиента: `/client/register`
+- Кабинет магазина: `/shop/login`
+- Кабинет курьера: `/courier/login`
+
+Удачной работы! 

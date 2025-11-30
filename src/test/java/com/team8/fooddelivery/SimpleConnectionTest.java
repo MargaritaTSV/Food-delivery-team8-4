@@ -15,8 +15,8 @@ public class SimpleConnectionTest {
     void testDatabaseConnection() throws SQLException {
         // Настройка параметров подключения
         String dbUrl = System.getProperty("db.url", "jdbc:postgresql://localhost:5432/food_delivery");
-        String dbUser = System.getProperty("db.user", "postgres");
-        String dbPassword = System.getProperty("db.password", "postgres");
+        String dbUser = System.getProperty("db.user", "fooddelivery_user");
+        String dbPassword = System.getProperty("db.password", "fooddelivery_pass");
 
         DatabaseConnection.setConnectionParams(dbUrl, dbUser, dbPassword);
         try {
