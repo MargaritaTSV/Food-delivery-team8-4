@@ -4,6 +4,7 @@
 <html>
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Доступные заказы - Food Delivery</title>
     <link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/style.css">
 </head>
@@ -21,6 +22,7 @@
 
     <main class="container">
         <h1>Доступные заказы</h1>
+        <p>Выберите заказ, который готовы забрать и доставить.</p>
 
         <c:if test="${empty availableOrders}">
             <div class="alert alert-info">Нет доступных заказов</div>
@@ -31,10 +33,12 @@
                 <c:forEach var="order" items="${availableOrders}">
                     <div class="order-card">
                         <h3>Заказ #${order.id}</h3>
-                        <p><strong>Откуда:</strong> ${order.shopAddress}</p>
-                        <p><strong>Куда:</strong> ${order.deliveryAddress}</p>
+                        <p><strong>Откуда:</strong> ${order.fromStreet} ${order.fromHouse}</p>
+                        <p><strong>Куда:</strong> ${order.toStreet} ${order.toHouse}</p>
+                        <c:if test="${not empty order.comment}">
+                            <p><strong>Комментарий:</strong> ${order.comment}</p>
+                        </c:if>
                         <p><strong>Сумма:</strong> ${order.totalPrice} ₽</p>
-                        <p><strong>Товары:</strong> ${order.items.size()} шт</p>
 
                         <form method="POST" action="${pageContext.request.contextPath}/courier/accept-order">
                             <input type="hidden" name="orderId" value="${order.id}">
@@ -49,4 +53,3 @@
     </main>
 </body>
 </html>
-

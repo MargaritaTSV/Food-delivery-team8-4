@@ -36,15 +36,22 @@
                         </thead>
                         <tbody>
                             <c:forEach var="item" items="${cartItems}">
-                                <tr class="cart-item" data-item-id="${item.id}">
+                                <tr class="cart-item">
                                     <td>${item.productName}</td>
                                     <td>${item.price} ₽</td>
                                     <td>
-                                        <input type="number" class="quantity" value="${item.quantity}" min="1">
+                                        <form method="POST" action="${pageContext.request.contextPath}/cart/update" class="inline-form">
+                                            <input type="hidden" name="itemId" value="${item.id}">
+                                            <input type="number" name="quantity" value="${item.quantity}" min="1">
+                                            <button type="submit" class="btn btn-secondary">Обновить</button>
+                                        </form>
                                     </td>
                                     <td>${item.price * item.quantity} ₽</td>
                                     <td>
-                                        <button class="btn-remove" onclick="removeFromCart(${item.id})">Удалить</button>
+                                        <form method="POST" action="${pageContext.request.contextPath}/cart/remove" class="inline-form">
+                                            <input type="hidden" name="itemId" value="${item.id}">
+                                            <button type="submit" class="btn btn-secondary">Удалить</button>
+                                        </form>
                                     </td>
                                 </tr>
                             </c:forEach>
@@ -53,9 +60,7 @@
 
                     <div class="cart-summary">
                         <p>Итого: <strong>${total} ₽</strong></p>
-                        <a href="${pageContext.request.contextPath}/cart/checkout" class="btn btn-primary btn-block">
-                            Оформить заказ
-                        </a>
+                        <a href="${pageContext.request.contextPath}/cart/checkout" class="btn btn-success">Оформить заказ</a>
                     </div>
                 </c:if>
             </div>
@@ -63,8 +68,5 @@
     </main>
 
     <%@ include file="/WEB-INF/jsp/layout/footer.jsp" %>
-
-    <script src="${pageContext.request.contextPath}/resources/js/cart.js"></script>
 </body>
 </html>
-
