@@ -12,7 +12,7 @@
 1. **Поднимите PostgreSQL**:
    - Самый быстрый путь — `docker compose up -d db` (минимальный compose-файл разворачивает только PostgreSQL с volume, база доступна на `localhost:5432`).
    - Или создайте базу вручную по инструкции ниже.
-2. **Накатите схему и (по желанию) тестовые данные**: `./run_scheme.sh` или командами из раздела «Подготовка базы данных».
+2. **Накатите схему и (по желанию) тестовые данные** командами из раздела «Подготовка базы данных» (без вспомогательных скриптов).
 3. **Соберите приложение**: `mvn clean package -DskipTests`.
    - Ожидается артефакт `target/food-delivery.war` (если Maven собрал JAR, установите `<packaging>war</packaging>` в pom и повторите сборку).
 4. **Разверните WAR в Tomcat 10.1+**:
@@ -87,8 +87,6 @@
   ```
 - Применить схему удобнее всего с хоста (контейнер уже слушает на `localhost:5432`):
   ```bash
-  ./run_scheme.sh
-  # или напрямую
   PGPASSWORD=fooddelivery_pass psql -h localhost -p 5432 -U fooddelivery_user -d food_delivery -f src/main/resources/sql/007_main_schema.sql
   ```
 
@@ -97,10 +95,6 @@
   docker exec -it postgres-db psql -U fooddelivery_user -d food_delivery -c "\dt"
   ```
   Норма — 11 таблиц (`addresses, cart_items, carts, clients, couriers, order_items, orders, payments, products, shops, working_hours`).
-
-## Полезное
-- Проверка подключения: `./check_db_connection.sh`
-- Запуск схемы целиком: `./run_scheme.sh` (если нужна полная переинициализация)
 
 ## Очистка/обновление БД перед повторным запуском
 Если нужно сбросить данные и применить схему заново:
@@ -114,9 +108,6 @@
 3. Запустите приложение или нужные тесты с теми же параметрами подключения.
 
 ### Другие способы создать/удалить таблицы
-- **Скрипт запуска схемы:** `./run_scheme.sh` — обёртка над `psql`, последовательно вызывает `000_drop_tables.sql` и единый файл `007_main_schema.sql` из каталога `src/main/resources/sql/`.
-  - Если запускаете **на хосте**, оставьте `DB_HOST=localhost` (значение по умолчанию).
-  - Если запускаете скрипт из другого контейнера той же docker-сети, передайте `DB_HOST=db` (совпадает с именем сервиса в compose).
 - **Через psql в интерактивном режиме:**
   ```bash
   PGPASSWORD=fooddelivery_pass psql -U fooddelivery_user -d food_delivery
