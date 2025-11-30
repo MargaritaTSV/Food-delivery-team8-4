@@ -3,18 +3,16 @@
 ## 1. Предварительные требования
 
 ### Установленное ПО:
-- ✅ Java JDK 11+ (проверка: `java -version`)
-- ✅ Maven 3.6+ (проверка: `mvn -version`)
+- ✅ Java JDK 17 (проверка: `java -version`)
+- ✅ Maven 3.9+ (проверка: `mvn -version`)
 - ✅ PostgreSQL 12+ (проверка: `psql --version`)
-- ✅ Tomcat 10.1+ (Apache Tomcat)
 
 ### Переменные окружения:
 ```bash
 # Установите переменные окружения
 export JAVA_HOME=/path/to/java
 export M2_HOME=/path/to/maven
-export TOMCAT_HOME=/path/to/tomcat
-export PATH=$JAVA_HOME/bin:$M2_HOME/bin:$TOMCAT_HOME/bin:$PATH
+export PATH=$JAVA_HOME/bin:$M2_HOME/bin:$PATH
 ```
 
 ---
@@ -53,117 +51,35 @@ psql -U fooddelivery_user -d food_delivery -f src/main/resources/sql/001_create_
 
 ---
 
-## 3. Компиляция и сборка проекта
+## 3. Компиляция, сборка и запуск JAR
 
 ### Перейдите в директорию проекта:
 ```bash
 cd /Users/smolevanataliia/Desktop/Food-delivery-team8-main
 ```
 
-### Очистка старых артефактов:
+### Очистка и сборка без тестов:
 ```bash
-mvn clean
-```
-
-### Компиляция:
-```bash
-mvn compile
-```
-
-### Сборка WAR архива (пропуск тестов):
-```bash
-mvn package -DskipTests
+mvn clean package -DskipTests
 ```
 
 ### Результат:
 ```
-✅ Создан файл: target/food-delivery.war
+✅ Создан исполняемый файл: target/food-delivery.jar
 ```
 
----
-
-## 4. Развертывание на Tomcat
-
-### Способ 1: Копирование WAR файла
-
+### Запуск (embedded Tomcat):
 ```bash
-# Копируем WAR на Tomcat
-cp /Users/smolevanataliia/Desktop/Food-delivery-team8-main/target/food-delivery.war \
-   $TOMCAT_HOME/webapps/
-
-# Tomcat автоматически распакует WAR при запуске
+java -jar target/food-delivery.jar
+# при необходимости: PORT=9090 java -jar target/food-delivery.jar
 ```
 
-### Способ 2: Используя Tomcat Manager (веб-интерфейс)
-
-1. Откройте http://localhost:8080/manager
-2. Введите логин/пароль администратора Tomcat
-3. Загрузите файл `target/food-delivery.war`
-
-### Способ 3: Конфигурация через context.xml (для production)
-
-```xml
-<!-- $TOMCAT_HOME/conf/Catalina/localhost/food-delivery.xml -->
-<Context path="/food-delivery" docBase="/path/to/food-delivery.war">
-    <Resource name="jdbc/FoodDeliveryDB"
-              auth="Container"
-              type="javax.sql.DataSource"
-              driverClassName="org.postgresql.Driver"
-              url="jdbc:postgresql://localhost:5432/food_delivery"
-              username="fooddelivery_user"
-              password="fooddelivery_pass"
-              maxActive="20"
-              maxIdle="10"
-              maxWait="-1"/>
-</Context>
+### Проверка в браузере:
+```
+http://localhost:8080/
 ```
 
----
-
-## 5. Запуск Tomcat
-
-### На macOS/Linux:
-```bash
-# Запуск в foreground (с логами)
-$TOMCAT_HOME/bin/catalina.sh run
-
-# Запуск в background (как сервис)
-$TOMCAT_HOME/bin/catalina.sh start
-
-# Остановка
-$TOMCAT_HOME/bin/catalina.sh stop
-```
-
-### На Windows:
-```cmd
-# Запуск
-%TOMCAT_HOME%\bin\catalina.bat run
-
-# Остановка (Ctrl+C)
-```
-
----
-
-## 6. Проверка развертывания
-
-### Проверьте логи Tomcat:
-```bash
-tail -f $TOMCAT_HOME/logs/catalina.out
-```
-
-### Должны увидеть:
-```
-INFO: Server startup in XXX ms
-```
-
-### Откройте приложение в браузере:
-```
-http://localhost:8080/food-delivery/
-```
-
-Должны увидеть:
-- ✅ Главная страница Food Delivery
-- ✅ Кнопки входа (Клиент, Магазин, Курьер)
+Должны увидеть стартовую страницу приложения и входные ссылки (Клиент, Магазин, Курьер).
 
 ---
 
@@ -210,11 +126,11 @@ http://localhost:8080/food-delivery/
 
 ### Проверьте логи приложения:
 ```bash
-# Основные логи Tomcat
-tail -f $TOMCAT_HOME/logs/catalina.out
+# Логи пишутся в stdout
+java -jar target/food-delivery.jar | tee food-delivery.log
 
-# Логи приложения (если настроены)
-tail -f $TOMCAT_HOME/logs/food-delivery.log
+# Если уже запущено в фоне
+tail -f food-delivery.log
 ```
 
 ### Включение debug режима
@@ -242,9 +158,8 @@ lsof -i :8080
 # Завершите процесс
 kill -9 <PID>
 
-# Или измените порт в $TOMCAT_HOME/conf/server.xml
-# Найдите строку: <Connector port="8080"
-# Измените на: <Connector port="8081"
+# Или запустите приложение на другом порту
+PORT=8081 java -jar target/food-delivery.jar
 ```
 
 ### Ошибка: "Database connection refused"
@@ -256,25 +171,20 @@ psql -U postgres
 # src/main/java/com/team8/fooddelivery/util/DatabaseInitializer.java
 ```
 
-### Ошибка: "Cannot find WAR file"
+### Ошибка: "Cannot find JAR file"
 ```bash
 # Убедитесь что сборка прошла успешно
 mvn package -DskipTests
 
 # Проверьте наличие файла
-ls -la target/food-delivery.war
-
-# Скопируйте заново
-cp target/food-delivery.war $TOMCAT_HOME/webapps/
+ls -la target/food-delivery.jar
 ```
 
 ### 404 при открытии страницы
 ```bash
-# Проверьте что Tomcat распаковал WAR
-ls -la $TOMCAT_HOME/webapps/food-delivery/
-
-# Проверьте логи
-tail -f $TOMCAT_HOME/logs/catalina.out | grep "ERROR\|WARN"
+# Проверьте консоль, где запущен `java -jar ...` (ошибки выводятся туда)
+# Убедитесь, что JAR запущен и слушает указанный порт
+curl -I http://localhost:8080/ | head -n 1
 ```
 
 ---
@@ -283,34 +193,19 @@ tail -f $TOMCAT_HOME/logs/catalina.out | grep "ERROR\|WARN"
 
 ### Рекомендации:
 
-1. **Используйте SSL/TLS:**
-   ```xml
-   <!-- server.xml -->
-   <Connector port="8443" 
-              protocol="org.apache.coyote.http11.Http11NioProtocol"
-              scheme="https" 
-              secure="true"
-              sslProtocol="TLS"
-              keystoreFile="path/to/keystore.jks"
-              keystorePass="password"/>
-   ```
+1. **Запуск как сервис:**
+   - оформите systemd unit с командой `java -jar /opt/food-delivery/food-delivery.jar` и переменными `PORT`, `DB_URL`, `DB_USER`, `DB_PASSWORD`.
 
-2. **Настройте memory Tomcat:**
-   ```bash
-   # setenv.sh
-   export CATALINA_OPTS="-Xms512M -Xmx1024M"
-   ```
-
-3. **Используйте reverse proxy (nginx):**
+2. **Используйте SSL/TLS через reverse proxy (nginx):**
    ```nginx
-   upstream tomcat {
+   upstream food_delivery {
        server localhost:8080;
    }
-   
+
    server {
        listen 80;
        server_name food-delivery.com;
-       
+
        location / {
            proxy_pass http://tomcat;
        }
@@ -337,20 +232,17 @@ curl -X POST http://localhost:8080/food-delivery/client/login \
      -d "email=test@example.com&password=test123"
 ```
 
-### Очистка логов:
+### Логи приложения:
 ```bash
-# Очистите старые логи
-rm $TOMCAT_HOME/logs/catalina.*.log
-rm $TOMCAT_HOME/logs/localhost.*.log
+# Логи выводятся в stdout, используйте tee для сохранения
+java -jar target/food-delivery.jar | tee food-delivery.log
 ```
 
 ### Перезагрузка приложения:
 ```bash
-# Без перезагрузки Tomcat
-rm -rf $TOMCAT_HOME/webapps/food-delivery*
-cp target/food-delivery.war $TOMCAT_HOME/webapps/
-
-# Tomcat автоматически распакует новый WAR
+# Остановите текущий процесс и запустите JAR заново
+pkill -f "food-delivery.jar" || true
+java -jar target/food-delivery.jar
 ```
 
 ---
