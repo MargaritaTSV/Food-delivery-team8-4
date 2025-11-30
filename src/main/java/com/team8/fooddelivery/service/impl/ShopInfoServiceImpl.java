@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.SQLException;
+import java.util.List;
 import java.util.Optional;
 
 import static com.team8.fooddelivery.util.ValidationUtils.*;
@@ -222,6 +223,26 @@ public class ShopInfoServiceImpl implements ShopInfoService {
     } catch (SQLException e) {
       logger.error("Ошибка при смене телефона магазина", e);
       throw new RuntimeException("Не удалось изменить телефон", e);
+    }
+  }
+
+  @Override
+  public List<Shop> getAllShops() {
+    try {
+      return shopRepository.findAll();
+    } catch (SQLException e) {
+      logger.error("Ошибка при загрузке списка магазинов", e);
+      throw new RuntimeException("Не удалось загрузить магазины", e);
+    }
+  }
+
+  @Override
+  public Optional<Shop> getShopById(Long shopId) {
+    try {
+      return shopRepository.findById(shopId);
+    } catch (SQLException e) {
+      logger.error("Ошибка при загрузке магазина {}", shopId, e);
+      throw new RuntimeException("Не удалось загрузить магазин", e);
     }
   }
 }
