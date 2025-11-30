@@ -10,7 +10,7 @@
 
 ## Быстрый запуск для полноценного UI (локально)
 1. **Поднимите PostgreSQL**:
-   - Самый быстрый путь — `docker compose up -d db` (используется `docker-compose.yml`, база доступна на `localhost:5432`).
+   - Самый быстрый путь — `docker compose up -d db` (минимальный compose-файл разворачивает только PostgreSQL с volume, база доступна на `localhost:5432`).
    - Или создайте базу вручную по инструкции ниже.
 2. **Накатите схему и (по желанию) тестовые данные**: `./run_scheme.sh` или командами из раздела «Подготовка базы данных».
 3. **Соберите приложение**: `mvn clean package -DskipTests`.
@@ -58,6 +58,14 @@
 - Переменные окружения: `DB_URL`, `DB_USER`, `DB_PASSWORD`
 - JVM-параметры: `-Ddb.url=... -Ddb.user=... -Ddb.password=...`
 
+### Частые проблемы и решения при локальном разворачивании
+- **Роль/БД уже существуют.** Сообщения вида `role "fooddelivery_user" already exists` или `database "food_delivery" already exists` безопасны: просто переходите к следующему шагу.
+- **Конфликт имени контейнера БД.** Compose теперь использует имя `postgres-db`; при сообщении `... is already in use` удалите старый контейнер (`docker rm -f postgres-db`) и повторите команду.
+- **Ошибки “must be owner of table …” при накатывании схемы.** Это значит, что таблицы созданы под другим пользователем. Решения на выбор:
+  1) Полностью сбросить таблицы: выполнить `src/main/resources/sql/000_drop_tables.sql` под владельцем таблиц (обычно `postgres`), затем снова применить `src/main/resources/sql/007_main_schema.sql` от имени `fooddelivery_user`.
+  2) Или сменить владельца существующих таблиц: в `psql` под `postgres` выполнить `REASSIGN OWNED BY postgres TO fooddelivery_user;` (или указать вашего владельца) и повторить команду со схемой.
+- **Maven падает с `TypeTag :: UNKNOWN` или jstl-warning.** Используйте Java 17 и системный Maven: `JAVA_HOME` должен указывать на JDK 17, а `mvn -version` в консоли обязан показывать 17. Если сборка запускалась из IDE с другим JDK (например, 21+), выберите JDK 17 в настройках Maven Runner или запустите `mvn clean package -DskipTests` из терминала.
+
 ## Запуск тестов вручную
 1. Собрать проект без тестов (поможет заранее выявить проблемы компиляции):
    ```bash
@@ -73,19 +81,20 @@
    Тестовые данные не очищаются, поэтому прогоны можно повторять поочередно или выборочно.
 
 ## Запуск в Docker
-- Поднять базу данных (postgres запустится в контейнере `db` и примонтирует volume `postgres_data`). Если вы запускаете вспомогательные скрипты **с хоста**, убедитесь, что `DB_HOST=localhost` (по умолчанию так и есть), потому что hostname `db` виден только внутри docker-сети:
+- Поднять базу данных (PostgreSQL в контейнере `postgres-db` с volume `postgres_data`). Если вы запускаете вспомогательные скрипты **с хоста**, оставьте `DB_HOST=localhost` (по умолчанию так и есть):
   ```bash
   docker compose up -d db
   ```
-- Применить схему и прогнать тесты внутри контейнера Maven (Java/Maven локально не нужны):
+- Применить схему удобнее всего с хоста (контейнер уже слушает на `localhost:5432`):
   ```bash
-  docker compose run --rm tests
+  ./run_scheme.sh
+  # или напрямую
+  PGPASSWORD=fooddelivery_pass psql -h localhost -p 5432 -U fooddelivery_user -d food_delivery -f src/main/resources/sql/007_main_schema.sql
   ```
-  Контейнер `tests` ждет готовности PostgreSQL, накатывает схему через `run_scheme.sh` (берет файлы из примонтированной папки проекта), затем запускает `mvn test` с параметрами из `docker-compose.yml`.
 
 - Проверить количество таблиц после подготовки схемы в контейнере:
   ```bash
-  docker exec -it food-delivery-db psql -U fooddelivery_user -d food_delivery -c "\dt"
+  docker exec -it postgres-db psql -U fooddelivery_user -d food_delivery -c "\dt"
   ```
   Норма — 11 таблиц (`addresses, cart_items, carts, clients, couriers, order_items, orders, payments, products, shops, working_hours`).
 
@@ -107,7 +116,7 @@
 ### Другие способы создать/удалить таблицы
 - **Скрипт запуска схемы:** `./run_scheme.sh` — обёртка над `psql`, последовательно вызывает `000_drop_tables.sql` и единый файл `007_main_schema.sql` из каталога `src/main/resources/sql/`.
   - Если запускаете **на хосте**, оставьте `DB_HOST=localhost` (значение по умолчанию).
-  - Если запускаете **внутри Docker/Compose**, передайте `DB_HOST=db` (в `docker-compose.yml` это уже сделано через переменные окружения).
+  - Если запускаете скрипт из другого контейнера той же docker-сети, передайте `DB_HOST=db` (совпадает с именем сервиса в compose).
 - **Через psql в интерактивном режиме:**
   ```bash
   PGPASSWORD=fooddelivery_pass psql -U fooddelivery_user -d food_delivery
@@ -116,8 +125,8 @@
   ```
   Команда `\i` подключает файлы относительно текущего каталога.
 - **Добавление тестовых данных:** любые скрипты из `src/main/resources/sql/test_data/` можно запускать выборочно после основного файла схемы.
-- **Docker Compose БД:** если база запущена в контейнере, подключитесь в него и выполните те же команды (SQL файлы доступны по пути `/app/src/main/resources/sql` благодаря volume):
+- **Docker Compose БД:** если база запущена в контейнере, подключитесь в него и выполните те же команды (SQL файлы можно передать через stdin):
   ```bash
-  docker exec -it food-delivery-db psql -U fooddelivery_user -d food_delivery -f /app/src/main/resources/sql/000_drop_tables.sql
-  docker exec -it food-delivery-db psql -U fooddelivery_user -d food_delivery -f /app/src/main/resources/sql/007_main_schema.sql
+  docker exec -i postgres-db psql -U fooddelivery_user -d food_delivery < src/main/resources/sql/000_drop_tables.sql
+  docker exec -i postgres-db psql -U fooddelivery_user -d food_delivery < src/main/resources/sql/007_main_schema.sql
   ```
