@@ -6,14 +6,11 @@ import com.team8.fooddelivery.model.product.CartItem;
 import com.team8.fooddelivery.service.NotificationService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
 
 class OrderServiceImplTest {
 

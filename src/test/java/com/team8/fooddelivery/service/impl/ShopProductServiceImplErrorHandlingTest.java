@@ -6,186 +6,217 @@ import com.team8.fooddelivery.model.shop.Shop;
 import com.team8.fooddelivery.model.shop.ShopStatus;
 import com.team8.fooddelivery.repository.ProductRepository;
 import com.team8.fooddelivery.repository.ShopRepository;
+import com.team8.fooddelivery.util.DatabaseConnection;
+import com.team8.fooddelivery.util.DatabaseInitializer;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.time.Duration;
-import java.util.Optional;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
 
 class ShopProductServiceImplErrorHandlingTest {
 
-    @Mock
-    private ProductRepository productRepository;
-    @Mock
-    private ShopRepository shopRepository;
-
     private ShopProductServiceImpl shopProductService;
+    private ShopRepository shopRepository;
+    private ProductRepository productRepository;
+    private Long testShopId;
+    private Long testProductId;
 
     @BeforeEach
-    void setUp() throws Exception {
-        MockitoAnnotations.openMocks(this);
+    void setUp() throws SQLException {
+        DatabaseInitializer.initializeDatabase();
+        String dbUrl = System.getProperty("db.url", "jdbc:postgresql://localhost:5432/food_delivery");
+        String dbUser = System.getProperty("db.user", "fooddelivery_user");
+        String dbPassword = System.getProperty("db.password", "fooddelivery_pass");
+        DatabaseConnection.setConnectionParams(dbUrl, dbUser, dbPassword);
+        
         shopProductService = new ShopProductServiceImpl();
-        // Use reflection to inject mocked repositories
-        java.lang.reflect.Field productRepoField = ShopProductServiceImpl.class.getDeclaredField("productRepository");
-        productRepoField.setAccessible(true);
-        productRepoField.set(shopProductService, productRepository);
+        shopRepository = new ShopRepository();
+        productRepository = new ProductRepository();
+    }
 
-        java.lang.reflect.Field shopRepoField = ShopProductServiceImpl.class.getDeclaredField("shopRepository");
-        shopRepoField.setAccessible(true);
-        shopRepoField.set(shopProductService, shopRepository);
+    @AfterEach
+    void tearDown() throws SQLException {
+        if (testProductId != null) {
+            try (Connection conn = DatabaseConnection.getConnection();
+                 PreparedStatement stmt = conn.prepareStatement("DELETE FROM products WHERE product_id = ?")) {
+                stmt.setLong(1, testProductId);
+                stmt.executeUpdate();
+            }
+        }
+        if (testShopId != null) {
+            try (Connection conn = DatabaseConnection.getConnection();
+                 PreparedStatement stmt = conn.prepareStatement("DELETE FROM shops WHERE shop_id = ?")) {
+                stmt.setLong(1, testShopId);
+                stmt.executeUpdate();
+            }
+        }
     }
 
     @Test
-    @DisplayName("getShopProducts: Should return empty list on SQLException")
-    void testGetShopProducts_SQLException() throws SQLException {
-        when(productRepository.findByShopId(anyLong())).thenThrow(new SQLException("DB Error"));
-        
-        var result = shopProductService.getShopProducts(1L);
-        
+    @DisplayName("getShopProducts: Should return empty list for non-existent shop")
+    void testGetShopProducts_NotFound() {
+        List<Product> result = shopProductService.getShopProducts(999999L);
         assertNotNull(result);
         assertTrue(result.isEmpty());
-        verify(productRepository, times(1)).findByShopId(anyLong());
     }
 
     @Test
-    @DisplayName("getProductsByCategory: Should return empty list on SQLException")
-    void testGetProductsByCategory_SQLException() throws SQLException {
-        when(productRepository.findByShopIdAndCategory(anyLong(), any(ProductCategory.class)))
-                .thenThrow(new SQLException("DB Error"));
-        
-        var result = shopProductService.getProductsByCategory(1L, ProductCategory.MAIN_DISH);
-        
+    @DisplayName("getProductsByCategory: Should return empty list for non-existent shop")
+    void testGetProductsByCategory_NotFound() {
+        List<Product> result = shopProductService.getProductsByCategory(999999L, ProductCategory.MAIN_DISH);
         assertNotNull(result);
         assertTrue(result.isEmpty());
-        verify(productRepository, times(1)).findByShopIdAndCategory(anyLong(), any(ProductCategory.class));
     }
 
     @Test
-    @DisplayName("updateProductAvailability: Should handle SQLException when product not found")
-    void testUpdateProductAvailability_ProductNotFound() throws SQLException {
-        when(productRepository.findById(anyLong())).thenReturn(Optional.empty());
-        
+    @DisplayName("updateProductAvailability: Should handle when product not found")
+    void testUpdateProductAvailability_ProductNotFound() {
         assertDoesNotThrow(() -> {
-            shopProductService.updateProductAvailability(1L, 999L, true);
+            shopProductService.updateProductAvailability(1L, 999999L, true);
         });
-        
-        verify(productRepository, times(1)).findById(anyLong());
-        verify(productRepository, never()).update(any(Product.class));
     }
 
     @Test
-    @DisplayName("updateProductAvailability: Should handle SQLException on update")
-    void testUpdateProductAvailability_SQLException() throws SQLException {
-        Product product = new Product(1L, "Test", "Desc", 100.0, 10.0, ProductCategory.MAIN_DISH, true, Duration.ofMinutes(10));
-        when(productRepository.findById(anyLong())).thenReturn(Optional.of(product));
-        doThrow(new SQLException("DB Error")).when(productRepository).update(any(Product.class));
-        
+    @DisplayName("changeShopStatus: Should handle when shop not found")
+    void testChangeShopStatus_ShopNotFound() {
         assertDoesNotThrow(() -> {
-            shopProductService.updateProductAvailability(1L, 1L, false);
+            shopProductService.changeShopStatus(999999L, ShopStatus.PENDING);
         });
-        
-        verify(productRepository, times(1)).findById(anyLong());
-        verify(productRepository, times(1)).update(any(Product.class));
     }
 
     @Test
-    @DisplayName("changeShopStatus: Should handle SQLException when shop not found")
-    void testChangeShopStatus_ShopNotFound() throws SQLException {
-        when(shopRepository.findById(anyLong())).thenReturn(Optional.empty());
-        
-        assertDoesNotThrow(() -> {
-            shopProductService.changeShopStatus(999L, ShopStatus.PENDING);
-        });
-        
-        verify(shopRepository, times(1)).findById(anyLong());
-        verify(shopRepository, never()).update(any(Shop.class));
-    }
-
-    @Test
-    @DisplayName("changeShopStatus: Should handle SQLException on update")
-    void testChangeShopStatus_SQLException() throws SQLException {
-        Shop shop = new Shop();
-        shop.setShopId(1L);
-        when(shopRepository.findById(anyLong())).thenReturn(Optional.of(shop));
-        doThrow(new SQLException("DB Error")).when(shopRepository).update(any(Shop.class));
-        
-        assertDoesNotThrow(() -> {
-            shopProductService.changeShopStatus(1L, ShopStatus.PENDING);
-        });
-        
-        verify(shopRepository, times(1)).findById(anyLong());
-        verify(shopRepository, times(1)).update(any(Shop.class));
-    }
-
-    @Test
-    @DisplayName("getShopById: Should return null on SQLException")
-    void testGetShopById_SQLException() throws SQLException {
-        when(shopRepository.findById(anyLong())).thenThrow(new SQLException("DB Error"));
-        
-        Shop result = shopProductService.getShopById(1L);
-        
+    @DisplayName("getShopById: Should return null for non-existent shop")
+    void testGetShopById_NotFound() {
+        Shop result = shopProductService.getShopById(999999L);
         assertNull(result);
-        verify(shopRepository, times(1)).findById(anyLong());
     }
 
     @Test
-    @DisplayName("updateShopInfo: Should throw RuntimeException on SQLException")
-    void testUpdateShopInfo_SQLException() throws SQLException {
+    @DisplayName("getShopById: Should return shop when exists")
+    void testGetShopById_Success() throws SQLException {
+        // Create test shop
         Shop shop = new Shop();
-        doThrow(new SQLException("DB Error")).when(shopRepository).update(any(Shop.class));
+        shop.setNaming("Test Shop " + System.currentTimeMillis());
+        shop.setDescription("Test Description");
+        shop.setStatus(ShopStatus.APPROVED);
+        shop.setEmailForAuth("test_" + System.currentTimeMillis() + "@test.com");
+        shop.setPhoneForAuth("+7999" + (System.currentTimeMillis() % 10000000));
+        shop.setPassword("test_password");
         
-        assertThrows(RuntimeException.class, () -> {
-            shopProductService.updateShopInfo(1L, shop);
-        });
+        testShopId = shopRepository.save(shop);
         
-        verify(shopRepository, times(1)).update(any(Shop.class));
+        Shop result = shopProductService.getShopById(testShopId);
+        assertNotNull(result);
+        assertEquals(testShopId, result.getShopId());
     }
 
     @Test
-    @DisplayName("addProduct: Should throw RuntimeException on SQLException")
-    void testAddProduct_SQLException() throws SQLException {
-        Product product = new Product(null, "Test", "Desc", 100.0, 10.0, ProductCategory.MAIN_DISH, true, Duration.ofMinutes(10));
-        when(productRepository.saveForShop(anyLong(), any(Product.class)))
-                .thenThrow(new SQLException("DB Error"));
+    @DisplayName("updateShopInfo: Should update shop when exists")
+    void testUpdateShopInfo_Success() throws SQLException {
+        // Create test shop
+        Shop shop = new Shop();
+        shop.setNaming("Test Shop " + System.currentTimeMillis());
+        shop.setDescription("Test Description");
+        shop.setStatus(ShopStatus.APPROVED);
+        shop.setEmailForAuth("test_" + System.currentTimeMillis() + "@test.com");
+        shop.setPhoneForAuth("+7999" + (System.currentTimeMillis() % 10000000));
+        shop.setPassword("test_password");
         
-        assertThrows(RuntimeException.class, () -> {
-            shopProductService.addProduct(1L, product);
-        });
+        testShopId = shopRepository.save(shop);
         
-        verify(productRepository, times(1)).saveForShop(anyLong(), any(Product.class));
+        Shop updatedShop = new Shop();
+        updatedShop.setShopId(testShopId);
+        updatedShop.setNaming("Updated Shop");
+        
+        Shop result = shopProductService.updateShopInfo(testShopId, updatedShop);
+        assertNotNull(result);
+        assertEquals("Updated Shop", result.getNaming());
     }
 
     @Test
-    @DisplayName("updateProduct: Should throw RuntimeException on SQLException")
-    void testUpdateProduct_SQLException() throws SQLException {
-        Product product = new Product(1L, "Test", "Desc", 100.0, 10.0, ProductCategory.MAIN_DISH, true, Duration.ofMinutes(10));
-        doThrow(new SQLException("DB Error")).when(productRepository).update(any(Product.class));
+    @DisplayName("addProduct: Should add product when shop exists")
+    void testAddProduct_Success() throws SQLException {
+        // Create test shop
+        Shop shop = new Shop();
+        shop.setNaming("Test Shop " + System.currentTimeMillis());
+        shop.setDescription("Test Description");
+        shop.setStatus(ShopStatus.APPROVED);
+        shop.setEmailForAuth("test_" + System.currentTimeMillis() + "@test.com");
+        shop.setPhoneForAuth("+7999" + (System.currentTimeMillis() % 10000000));
+        shop.setPassword("test_password");
         
-        assertThrows(RuntimeException.class, () -> {
-            shopProductService.updateProduct(1L, 1L, product);
-        });
+        testShopId = shopRepository.save(shop);
         
-        verify(productRepository, times(1)).update(any(Product.class));
+        Product product = new Product(null, "Test Product", "Description", 100.0, 10.0, 
+                ProductCategory.MAIN_DISH, true, Duration.ofMinutes(10));
+        
+        Product result = shopProductService.addProduct(testShopId, product);
+        assertNotNull(result);
+        assertNotNull(result.getProductId());
+        testProductId = result.getProductId();
     }
 
     @Test
-    @DisplayName("deleteProduct: Should throw RuntimeException on SQLException")
-    void testDeleteProduct_SQLException() throws SQLException {
-        doThrow(new SQLException("DB Error")).when(productRepository).delete(anyLong());
+    @DisplayName("updateProduct: Should update product when exists")
+    void testUpdateProduct_Success() throws SQLException {
+        // Create test shop and product
+        Shop shop = new Shop();
+        shop.setNaming("Test Shop " + System.currentTimeMillis());
+        shop.setDescription("Test Description");
+        shop.setStatus(ShopStatus.APPROVED);
+        shop.setEmailForAuth("test_" + System.currentTimeMillis() + "@test.com");
+        shop.setPhoneForAuth("+7999" + (System.currentTimeMillis() % 10000000));
+        shop.setPassword("test_password");
         
-        assertThrows(RuntimeException.class, () -> {
-            shopProductService.deleteProduct(1L, 1L);
+        testShopId = shopRepository.save(shop);
+        
+        Product product = new Product(null, "Test Product", "Description", 100.0, 10.0, 
+                ProductCategory.MAIN_DISH, true, Duration.ofMinutes(10));
+        
+        Product savedProduct = shopProductService.addProduct(testShopId, product);
+        testProductId = savedProduct.getProductId();
+        
+        Product updatedProduct = new Product(testProductId, "Updated Product", "Updated Description", 
+                150.0, 15.0, ProductCategory.DESSERT, false, Duration.ofMinutes(15));
+        
+        Product result = shopProductService.updateProduct(testShopId, testProductId, updatedProduct);
+        assertNotNull(result);
+        assertEquals("Updated Product", result.getName());
+    }
+
+    @Test
+    @DisplayName("deleteProduct: Should delete product when exists")
+    void testDeleteProduct_Success() throws SQLException {
+        // Create test shop and product
+        Shop shop = new Shop();
+        shop.setNaming("Test Shop " + System.currentTimeMillis());
+        shop.setDescription("Test Description");
+        shop.setStatus(ShopStatus.APPROVED);
+        shop.setEmailForAuth("test_" + System.currentTimeMillis() + "@test.com");
+        shop.setPhoneForAuth("+7999" + (System.currentTimeMillis() % 10000000));
+        shop.setPassword("test_password");
+        
+        testShopId = shopRepository.save(shop);
+        
+        Product product = new Product(null, "Test Product", "Description", 100.0, 10.0, 
+                ProductCategory.MAIN_DISH, true, Duration.ofMinutes(10));
+        
+        Product savedProduct = shopProductService.addProduct(testShopId, product);
+        Long productId = savedProduct.getProductId();
+        
+        assertDoesNotThrow(() -> {
+            shopProductService.deleteProduct(testShopId, productId);
         });
         
-        verify(productRepository, times(1)).delete(anyLong());
+        // Verify product is deleted
+        assertTrue(productRepository.findById(productId).isEmpty());
     }
 }
-

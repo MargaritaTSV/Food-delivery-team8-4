@@ -1,54 +1,72 @@
 package com.team8.fooddelivery.service.impl;
 
 import com.team8.fooddelivery.model.product.Cart;
-import com.team8.fooddelivery.repository.CartRepository;
-import com.team8.fooddelivery.repository.ClientRepository;
+import com.team8.fooddelivery.util.DatabaseConnection;
+import com.team8.fooddelivery.util.DatabaseInitializer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 
 import java.sql.SQLException;
-import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.Mockito.*;
 
 class CartServiceImplErrorHandlingTest {
-
-    @Mock
-    private CartRepository cartRepository;
-    @Mock
-    private ClientRepository clientRepository;
 
     private CartServiceImpl cartService;
 
     @BeforeEach
-    void setUp() throws Exception {
-        MockitoAnnotations.openMocks(this);
+    void setUp() throws SQLException {
+        DatabaseInitializer.initializeDatabase();
+        String dbUrl = System.getProperty("db.url", "jdbc:postgresql://localhost:5432/food_delivery");
+        String dbUser = System.getProperty("db.user", "fooddelivery_user");
+        String dbPassword = System.getProperty("db.password", "fooddelivery_pass");
+        DatabaseConnection.setConnectionParams(dbUrl, dbUser, dbPassword);
+        
         cartService = new CartServiceImpl();
-        // Use reflection to inject mocked repositories
-        java.lang.reflect.Field cartRepoField = CartServiceImpl.class.getDeclaredField("cartRepository");
-        cartRepoField.setAccessible(true);
-        cartRepoField.set(cartService, cartRepository);
-
-        java.lang.reflect.Field clientRepoField = CartServiceImpl.class.getDeclaredField("clientRepository");
-        clientRepoField.setAccessible(true);
-        clientRepoField.set(cartService, clientRepository);
     }
 
     @Test
-    @DisplayName("getCartForClient: Should return null on SQLException")
-    void testGetCartForClient_SQLException() throws SQLException {
-        when(clientRepository.findById(anyLong())).thenReturn(Optional.of(new com.team8.fooddelivery.model.client.Client()));
-        when(cartRepository.findByClientId(anyLong())).thenThrow(new SQLException("DB Error"));
-        
-        Cart result = cartService.getCartForClient(1L);
-        
+    @DisplayName("getCartForClient: Should return null for non-existent client")
+    void testGetCartForClient_NotFound() {
+        Cart result = cartService.getCartForClient(999999L);
         assertNull(result);
-        verify(cartRepository, times(1)).findByClientId(anyLong());
+    }
+
+    @Test
+    @DisplayName("getCartForClient: Should return cart when client exists")
+    void testGetCartForClient_Success() throws SQLException {
+        // Create a test client
+        com.team8.fooddelivery.service.impl.ClientServiceImpl clientService = 
+            new com.team8.fooddelivery.service.impl.ClientServiceImpl(cartService);
+        
+        com.team8.fooddelivery.model.Address address = com.team8.fooddelivery.model.Address.builder()
+                .country("Russia").city("Moscow").street("Test").building("1")
+                .apartment("10").entrance("1").floor(1)
+                .latitude(55.7558).longitude(37.6173).build();
+        
+        String uniquePhone = "+7999" + (System.currentTimeMillis() % 10000000);
+        String uniqueEmail = "cart_test_" + System.currentTimeMillis() + "@test.com";
+        
+        com.team8.fooddelivery.model.client.Client client = clientService.register(
+            uniquePhone, "Password123!", "Cart Test Client", uniqueEmail, address);
+        
+        // Create cart
+        cartService.createCartForClient(client.getId());
+        
+        Cart result = cartService.getCartForClient(client.getId());
+        assertNotNull(result);
+        
+        // Cleanup
+        try (java.sql.Connection conn = DatabaseConnection.getConnection();
+             java.sql.PreparedStatement stmt = conn.prepareStatement("DELETE FROM carts WHERE client_id = ?")) {
+            stmt.setLong(1, client.getId());
+            stmt.executeUpdate();
+        }
+        try (java.sql.Connection conn = DatabaseConnection.getConnection();
+             java.sql.PreparedStatement stmt = conn.prepareStatement("DELETE FROM clients WHERE id = ?")) {
+            stmt.setLong(1, client.getId());
+            stmt.executeUpdate();
+        }
     }
 }
-

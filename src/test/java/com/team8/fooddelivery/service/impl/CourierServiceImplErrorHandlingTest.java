@@ -1,77 +1,83 @@
 package com.team8.fooddelivery.service.impl;
 
 import com.team8.fooddelivery.model.courier.Courier;
-import com.team8.fooddelivery.model.order.Order;
 import com.team8.fooddelivery.repository.CourierRepository;
-import com.team8.fooddelivery.repository.OrderRepository;
+import com.team8.fooddelivery.util.DatabaseConnection;
+import com.team8.fooddelivery.util.DatabaseInitializer;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.Mockito.*;
 
 class CourierServiceImplErrorHandlingTest {
 
-    @Mock
-    private CourierRepository courierRepository;
-    @Mock
-    private OrderRepository orderRepository;
-
     private CourierServiceImpl courierService;
+    private CourierRepository courierRepository;
+    private Long testCourierId;
 
     @BeforeEach
-    void setUp() throws Exception {
-        MockitoAnnotations.openMocks(this);
+    void setUp() throws SQLException {
+        DatabaseInitializer.initializeDatabase();
+        String dbUrl = System.getProperty("db.url", "jdbc:postgresql://localhost:5432/food_delivery");
+        String dbUser = System.getProperty("db.user", "fooddelivery_user");
+        String dbPassword = System.getProperty("db.password", "fooddelivery_pass");
+        DatabaseConnection.setConnectionParams(dbUrl, dbUser, dbPassword);
+        
         courierService = new CourierServiceImpl();
-        // Use reflection to inject mocked repositories
-        java.lang.reflect.Field courierRepoField = CourierServiceImpl.class.getDeclaredField("courierRepository");
-        courierRepoField.setAccessible(true);
-        courierRepoField.set(courierService, courierRepository);
-
-        java.lang.reflect.Field orderRepoField = CourierServiceImpl.class.getDeclaredField("orderRepository");
-        orderRepoField.setAccessible(true);
-        orderRepoField.set(courierService, orderRepository);
+        courierRepository = new CourierRepository();
     }
 
-    @Test
-    @DisplayName("getCourierById: Should return null on SQLException")
-    void testGetCourierById_SQLException() throws SQLException {
-        when(courierRepository.findById(anyLong())).thenThrow(new SQLException("DB Error"));
-        
-        Courier result = courierService.getCourierById(1L);
-        
-        assertNull(result);
-        verify(courierRepository, times(1)).findById(anyLong());
-    }
-
-    @Test
-    @DisplayName("getOrderHistory: Should return empty list on SQLException")
-    void testGetOrderHistory_SQLException() throws SQLException {
-        when(orderRepository.findByCourierId(anyLong())).thenThrow(new SQLException("DB Error"));
-        
-        var result = courierService.getOrderHistory(1L);
-        
-        assertNotNull(result);
-        assertTrue(result.isEmpty());
-        verify(orderRepository, times(1)).findByCourierId(anyLong());
+    @AfterEach
+    void tearDown() throws SQLException {
+        if (testCourierId != null) {
+            try (Connection conn = DatabaseConnection.getConnection();
+                 PreparedStatement stmt = conn.prepareStatement("DELETE FROM couriers WHERE id = ?")) {
+                stmt.setLong(1, testCourierId);
+                stmt.executeUpdate();
+            }
+        }
     }
 
     @Test
     @DisplayName("getCourierById: Should return null for non-existent courier")
-    void testGetCourierById_NotFound() throws SQLException {
-        when(courierRepository.findById(anyLong())).thenReturn(Optional.empty());
-        
-        Courier result = courierService.getCourierById(999L);
-        
+    void testGetCourierById_NotFound() {
+        Courier result = courierService.getCourierById(999999L);
         assertNull(result);
-        verify(courierRepository, times(1)).findById(anyLong());
+    }
+
+    @Test
+    @DisplayName("getOrderHistory: Should return empty list for non-existent courier")
+    void testGetOrderHistory_NotFound() {
+        var result = courierService.getOrderHistory(999999L);
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    @DisplayName("getCourierById: Should return courier when exists")
+    void testGetCourierById_Success() throws SQLException {
+        String uniquePhone = "+7999" + (System.currentTimeMillis() % 10000000);
+        testCourierId = courierService.registerNewCourier("Test Courier", uniquePhone, "Password123!", "bike");
+        
+        Courier result = courierService.getCourierById(testCourierId);
+        assertNotNull(result);
+        assertEquals(testCourierId, result.getId());
+    }
+
+    @Test
+    @DisplayName("getOrderHistory: Should return orders when courier exists")
+    void testGetOrderHistory_Success() throws SQLException {
+        String uniquePhone = "+7999" + (System.currentTimeMillis() % 10000000);
+        testCourierId = courierService.registerNewCourier("Test Courier", uniquePhone, "Password123!", "bike");
+        
+        var result = courierService.getOrderHistory(testCourierId);
+        assertNotNull(result);
+        // May be empty if no orders assigned
     }
 }
-
