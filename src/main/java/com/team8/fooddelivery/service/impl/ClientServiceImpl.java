@@ -7,6 +7,7 @@ import com.team8.fooddelivery.model.client.Client;
 import com.team8.fooddelivery.model.client.ClientStatus;
 import com.team8.fooddelivery.repository.ClientRepository;
 import com.team8.fooddelivery.service.ClientService;
+import com.team8.fooddelivery.service.NotificationService;
 import com.team8.fooddelivery.util.PasswordUtils;
 import com.team8.fooddelivery.util.ValidationUtils;
 import com.team8.fooddelivery.util.JWTUtil;
@@ -23,7 +24,7 @@ import java.util.*;
 public class ClientServiceImpl implements ClientService {
 
     private static final Logger logger = LoggerFactory.getLogger(ClientServiceImpl.class);
-    NotificationServiceImpl notificationService = new NotificationServiceImpl();
+    private final NotificationService notificationService;
 
     private final ClientRepository clientRepository;
     private final CartServiceImpl cartService;
@@ -31,6 +32,13 @@ public class ClientServiceImpl implements ClientService {
     public ClientServiceImpl(CartServiceImpl cartService) {
         this.cartService = cartService;
         this.clientRepository = new ClientRepository();
+        this.notificationService = new NotificationServiceImpl();
+    }
+
+    public ClientServiceImpl(CartServiceImpl cartService, NotificationService notificationService) {
+        this.cartService = cartService;
+        this.clientRepository = new ClientRepository();
+        this.notificationService = notificationService;
     }
 
 

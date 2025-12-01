@@ -12,6 +12,7 @@ import com.team8.fooddelivery.model.client.Client;
 import com.team8.fooddelivery.repository.ClientRepository;
 import com.team8.fooddelivery.repository.OrderRepository;
 import com.team8.fooddelivery.repository.PaymentRepository;
+import com.team8.fooddelivery.service.NotificationService;
 import com.team8.fooddelivery.service.OrderService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,7 +29,7 @@ public class OrderServiceImpl implements OrderService {
     private final CartServiceImpl cartService;
     private final OrderRepository orderRepository;
     private final PaymentRepository paymentRepository;
-    private final NotificationServiceImpl notificationService;
+    private final NotificationService notificationService;
     private final ClientRepository clientRepository;
 
     public OrderServiceImpl(CartServiceImpl cartService) {
@@ -36,6 +37,14 @@ public class OrderServiceImpl implements OrderService {
         this.orderRepository = new OrderRepository();
         this.paymentRepository = new PaymentRepository();
         this.notificationService = new NotificationServiceImpl();
+        this.clientRepository = new ClientRepository();
+    }
+
+    public OrderServiceImpl(CartServiceImpl cartService, NotificationService notificationService) {
+        this.cartService = cartService;
+        this.orderRepository = new OrderRepository();
+        this.paymentRepository = new PaymentRepository();
+        this.notificationService = notificationService;
         this.clientRepository = new ClientRepository();
     }
 
@@ -78,9 +87,14 @@ public class OrderServiceImpl implements OrderService {
             if (payment.getStatus() == PaymentStatus.SUCCESS) {
                 order.setStatus(OrderStatus.PAID);
                 order.setPaymentStatus(PaymentStatus.SUCCESS);
+            } else if (payment.getStatus() == PaymentStatus.FAILED) {
+                // Платеж не прошел - отменяем заказ
+                order.setStatus(OrderStatus.CANCELLED);
+                order.setPaymentStatus(PaymentStatus.FAILED);
             } else if (paymentMethod == PaymentMethodForOrder.CASH) {
                 order.setStatus(OrderStatus.CONFIRMED);
             } else {
+                // Для других методов с PENDING статусом (не должно происходить в нормальном flow)
                 order.setStatus(OrderStatus.CANCELLED);
             }
 

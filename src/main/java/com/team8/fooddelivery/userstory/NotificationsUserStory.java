@@ -1,6 +1,7 @@
 package com.team8.fooddelivery.userstory;
 
 import com.team8.fooddelivery.model.notification.Notification;
+import com.team8.fooddelivery.service.NotificationService;
 import com.team8.fooddelivery.service.impl.NotificationServiceImpl;
 import com.team8.fooddelivery.util.DatabaseInitializer;
 
@@ -10,7 +11,7 @@ public class NotificationsUserStory {
 
     public static void main(String[] args) {
         DatabaseInitializer.initializeDatabase();
-        NotificationServiceImpl notificationService = new NotificationServiceImpl();
+        NotificationService notificationService = new NotificationServiceImpl();
         Long clientId = 1L;
 
         // ==== 1. Отправка уведомлений готовыми шаблонами ====

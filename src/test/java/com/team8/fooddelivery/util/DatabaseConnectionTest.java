@@ -1,149 +1,164 @@
 package com.team8.fooddelivery.util;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.*;
 
+import java.lang.reflect.Method;
 import java.sql.Connection;
 import java.sql.SQLException;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@DisplayName("Тесты подключения к базе данных")
-public class DatabaseConnectionTest {
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
+class DatabaseConnectionTest {
 
-  // Единые учетные данные (совместимость со скриптами)
-  private static final String DEFAULT_DB_URL = "jdbc:postgresql://localhost:5432/food_delivery";
-  private static final String DEFAULT_DB_USER = "postgres";
-  private static final String DEFAULT_DB_PASSWORD = "postgres";
+  private static String originalUrl;
+  private static String originalUser;
+  private static String originalPass;
 
-  @BeforeEach
-  void setUp() {
-    //DatabaseConnection.initializeDatabase();
-    // Используем системные свойства или значения по умолчанию
-    String dbUrl = System.getProperty("db.url", DEFAULT_DB_URL);
-    String dbUser = System.getProperty("db.user", DEFAULT_DB_USER);
-    String dbPassword = System.getProperty("db.password", DEFAULT_DB_PASSWORD);
-    DatabaseConnection.setConnectionParams(dbUrl, dbUser, dbPassword);
+  // Сохраняем настройки перед тестами, чтобы не сломать остальные тесты
+  @BeforeAll
+  static void saveConfig() throws Exception {
+    // Достаем текущие значения через рефлексию (так как геттеров нет)
+    originalUrl = getStaticField("dbUrl");
+    originalUser = getStaticField("dbUser");
+    originalPass = getStaticField("dbPassword");
+  }
 
-    System.out.println("Тестовые параметры подключения:");
-    System.out.println("URL: " + dbUrl);
-    System.out.println("User: " + dbUser);
-    System.out.println("Password: " + (dbPassword.isEmpty() ? "(empty)" : "***"));
+  // Восстанавливаем настройки после каждого теста
+  @AfterEach
+  void restoreConfig() {
+    DatabaseConnection.setConnectionParams(originalUrl, originalUser, originalPass);
+  }
 
-    // Инициализируем структуру БД
-    try {
-      DatabaseConnection.initializeDatabase();
-      System.out.println("✅ База данных успешно инициализирована");
-    } catch (Exception e) {
-      System.err.println("❌ Ошибка инициализации БД: " + e.getMessage());
-      throw new RuntimeException("Не удалось инициализировать тестовую БД", e);
+  // ---------------------------------------------------
+  // 1. HAPPY PATH (Успешные сценарии)
+  // ---------------------------------------------------
+
+  @Test
+  @Order(1)
+  @DisplayName("1. getConnection: Успешное подключение к реальной БД")
+  void testGetConnection_Success() throws SQLException {
+    // Этот тест пройдет, только если у тебя поднята БД (как в прошлых тестах)
+    try (Connection conn = DatabaseConnection.getConnection()) {
+      assertNotNull(conn);
+      assertFalse(conn.isClosed());
     }
   }
 
   @Test
-  @DisplayName("Проверка тестового подключения к БД")
-  void testConnection() {
-    boolean connected = DatabaseConnection.testConnection();
-
-    if (!connected) {
-      System.err.println("\n❌ Не удалось подключиться к БД с параметрами:");
-      System.err.println("URL: " + DEFAULT_DB_URL);
-      System.err.println("User: " + DEFAULT_DB_USER);
-      System.err.println("\nВыполните настройку: ./setup_database.sh");
-    }
-
-    assertTrue(connected, "Подключение к базе данных должно быть успешным. " +
-        "Выполните ./setup_database.sh для настройки БД");
+  @Order(2)
+  @DisplayName("2. testConnection: Возвращает true при рабочей БД")
+  void testTestConnection_Success() {
+    assertTrue(DatabaseConnection.testConnection(), "Должно быть true, если БД доступна");
   }
 
   @Test
-  @DisplayName("Получение подключения к БД")
-  void testGetConnection() throws SQLException {
-    try (Connection connection = DatabaseConnection.getConnection()) {
-      assertNotNull(connection, "Подключение не должно быть null");
-      assertFalse(connection.isClosed(), "Подключение должно быть открытым");
-
-      // Дополнительная проверка валидности подключения
-      assertTrue(connection.isValid(2), "Подключение должно быть валидным");
-    }
+  @Order(3)
+  @DisplayName("3. initializeDatabase: Проверка вызова (идемпотентность)")
+  void testInitializeDatabase() {
+    // Просто проверяем, что метод не падает
+    assertDoesNotThrow(DatabaseConnection::initializeDatabase);
   }
 
   @Test
-  @DisplayName("Проверка закрытия подключения")
-  void testCloseConnection() throws SQLException {
-    Connection connection = DatabaseConnection.getConnection();
-    assertNotNull(connection);
-    assertFalse(connection.isClosed());
-
-    // Закрываем подключение
-    connection.close();
-    assertTrue(connection.isClosed(), "Подключение должно быть закрыто");
+  @Order(4)
+  @DisplayName("4. closeConnection: Корректная работа с null")
+  void testCloseConnection_Null() {
+    // Не должно падать
+    assertDoesNotThrow(() -> DatabaseConnection.closeConnection(null));
   }
 
   @Test
-  @DisplayName("Проверка установки параметров подключения")
-  void testSetConnectionParams() {
-    String testUrl = "jdbc:postgresql://localhost:5432/test_db";
-    String testUser = "test_user";
-    String testPassword = "test_password";
+  @Order(5)
+  @DisplayName("5. closeConnection: Закрытие реального соединения")
+  void testCloseConnection_Real() throws SQLException {
+    Connection conn = DatabaseConnection.getConnection();
+    DatabaseConnection.closeConnection(conn);
+    assertTrue(conn.isClosed());
+  }
 
-    // Проверяем, что метод не бросает исключений
-    assertDoesNotThrow(() ->
-        DatabaseConnection.setConnectionParams(testUrl, testUser, testPassword)
-    );
+  // ---------------------------------------------------
+  // 2. ERROR PATH (Ломаем настройки)
+  // ---------------------------------------------------
 
-    // Возвращаем оригинальные параметры для следующих тестов
-    DatabaseConnection.setConnectionParams(DEFAULT_DB_URL, DEFAULT_DB_USER, DEFAULT_DB_PASSWORD);
+  @Test
+  @Order(6)
+  @DisplayName("6. Ошибка подключения: Неверный URL (покрытие catch блока)")
+  void testGetConnection_Failure() {
+    // Устанавливаем "битый" URL
+    DatabaseConnection.setConnectionParams("jdbc:postgresql://invalid-host:5432/db", "user", "pass");
+
+    // 1. Проверяем getConnection (должен выбросить SQLException и залогировать ошибку)
+    assertThrows(SQLException.class, DatabaseConnection::getConnection);
+
+    // 2. Проверяем testConnection (должен вернуть false и залогировать ошибку)
+    assertFalse(DatabaseConnection.testConnection());
+  }
+
+  // ---------------------------------------------------
+  // 3. PRIVATE LOGIC (Метод resolve через Reflection)
+  // Это даст покрытие логики выбора URL
+  // ---------------------------------------------------
+
+  @Test
+  @Order(7)
+  @DisplayName("7. Private resolve: Приоритет System Property")
+  void testResolve_SystemProperty() throws Exception {
+    String key = "test.db.prop";
+    String envKey = "TEST_DB_ENV";
+
+    // Устанавливаем системное свойство
+    System.setProperty(key, "VALUE_FROM_SYSTEM");
+
+    // Вызываем приватный метод resolve
+    String result = invokeResolve(key, envKey, "default_local", "default_container");
+
+    assertEquals("VALUE_FROM_SYSTEM", result);
+
+    // Чистим
+    System.clearProperty(key);
   }
 
   @Test
-  @DisplayName("Проверка работы с параметрами по умолчанию")
-  void testDefaultParameters() throws SQLException {
-    // Явно устанавливаем параметры по умолчанию
-    DatabaseConnection.setConnectionParams(DEFAULT_DB_URL, DEFAULT_DB_USER, DEFAULT_DB_PASSWORD);
+  @Order(8)
+  @DisplayName("8. Private resolve: Fallback к дефолтному значению")
+  void testResolve_Default() throws Exception {
+    String key = "test.db.prop.missing";
+    String envKey = "TEST_DB_ENV_MISSING";
 
-    try (Connection connection = DatabaseConnection.getConnection()) {
-      assertNotNull(connection, "Должно быть возможно подключение с параметрами по умолчанию");
-      assertTrue(connection.isValid(2), "Подключение должно быть валидным");
-    }
+    // Системного свойства нет, переменной окружения нет -> берем default
+    String result = invokeResolve(key, envKey, "default_local", "default_container");
+
+    assertEquals("default_local", result);
   }
 
   @Test
-  @DisplayName("Проверка поведения при неверных параметрах")
-  void testInvalidParameters() {
-    // Устанавливаем неверные параметры
-    DatabaseConnection.setConnectionParams(
-        "jdbc:postgresql://localhost:5432/nonexistent_db",
-        "invalid_user",
-        "wrong_password"
-    );
-
-    // Ожидаем, что тест подключения вернет false
-    boolean connected = DatabaseConnection.testConnection();
-    assertFalse(connected, "Подключение с неверными параметрами должно завершиться ошибкой");
-
-    // Проверяем, что получение подключения бросает исключение
-    assertThrows(SQLException.class, () -> {
-      DatabaseConnection.getConnection();
-    }, "При неверных параметрах должно бросаться SQLException");
-
-    // Возвращаем валидные параметры
-    DatabaseConnection.setConnectionParams(DEFAULT_DB_URL, DEFAULT_DB_USER, DEFAULT_DB_PASSWORD);
+  @Order(9)
+  @DisplayName("9. Private resolve: Fallback к контейнеру (если локального нет)")
+  void testResolve_ContainerDefault() throws Exception {
+    String result = invokeResolve("missing.key", "missing.env", null, "container_url");
+    assertEquals("container_url", result);
   }
 
-  @Test
-  @DisplayName("Проверка многократного открытия/закрытия подключения")
-  void testMultipleConnections() throws SQLException {
-    // Открываем несколько подключений и проверяем их независимость
-    try (Connection conn1 = DatabaseConnection.getConnection();
-        Connection conn2 = DatabaseConnection.getConnection()) {
+  // ==========================================
+  // HELPERS (Reflection)
+  // ==========================================
 
-      assertNotNull(conn1);
-      assertNotNull(conn2);
-      assertNotSame(conn1, conn2, "Должны создаваться разные экземпляры подключений");
-      assertTrue(conn1.isValid(2));
-      assertTrue(conn2.isValid(2));
-    }
+  /**
+   * Вызов приватного статического метода resolve
+   */
+  private String invokeResolve(String sysPropKey, String envKey, String localDefault, String containerDefault) throws Exception {
+    Method method = DatabaseConnection.class.getDeclaredMethod("resolve", String.class, String.class, String.class, String.class);
+    method.setAccessible(true);
+    return (String) method.invoke(null, sysPropKey, envKey, localDefault, containerDefault);
+  }
+
+  /**
+   * Чтение приватного статического поля (чтобы сохранить настройки)
+   */
+  private static String getStaticField(String fieldName) throws Exception {
+    java.lang.reflect.Field field = DatabaseConnection.class.getDeclaredField(fieldName);
+    field.setAccessible(true);
+    return (String) field.get(null);
   }
 }

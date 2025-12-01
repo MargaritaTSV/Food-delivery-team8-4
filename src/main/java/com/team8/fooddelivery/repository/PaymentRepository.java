@@ -40,6 +40,22 @@ public class PaymentRepository {
         }
     }
 
+    public Optional<Payment> findById(Long id) throws SQLException {
+        String sql = "SELECT * FROM payments WHERE id = ?";
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setLong(1, id);
+            ResultSet rs = stmt.executeQuery();
+
+            if (rs.next()) {
+                return Optional.of(mapResultSetToPayment(rs));
+            }
+            return Optional.empty();
+        }
+    }
+
     public Optional<Payment> findByOrderId(Long orderId) throws SQLException {
         String sql = "SELECT * FROM payments WHERE order_id = ?";
 

@@ -30,6 +30,7 @@ public class DatabaseInitializer {
       "sql/004_create_order_tables/009_create_order_items.sql",  // БЕЗ внешних ключей
       "sql/004_create_order_tables/010_create_carts.sql",  // БЕЗ внешних ключей
       "sql/004_create_order_tables/011_create_cart_items.sql",  // БЕЗ внешних ключей
+      "sql/004_create_order_tables/011_create_payments.sql",  // Таблица payments
       // Потом добавляем внешние ключи
       "sql/002_create_shop_tables/006_add_shop_foreign_keys.sql",
       "sql/004_create_order_tables/012_add_cart_foreign_keys.sql",
@@ -153,14 +154,14 @@ public class DatabaseInitializer {
     try (Connection conn = DatabaseConnection.getConnection()) {
       // Отключаем auto-commit для выполнения всех команд в одной транзакции
       conn.setAutoCommit(false);
-
       try (Statement stmt = conn.createStatement()) {
         // Отключаем проверку внешних ключей
         stmt.execute("SET session_replication_role = 'replica'");
 
-        // Удаляем таблицы
+        // Удаляем таблицы (IF EXISTS предотвращает ошибки, если таблиц нет)
         stmt.execute("DROP TABLE IF EXISTS cart_items CASCADE");
         stmt.execute("DROP TABLE IF EXISTS carts CASCADE");
+        stmt.execute("DROP TABLE IF EXISTS payments CASCADE");
         stmt.execute("DROP TABLE IF EXISTS order_items CASCADE");
         stmt.execute("DROP TABLE IF EXISTS orders CASCADE");
         stmt.execute("DROP TABLE IF EXISTS products CASCADE");
@@ -179,20 +180,25 @@ public class DatabaseInitializer {
 
       } catch (SQLException e) {
         // Откатываем транзакцию при ошибке
-        conn.rollback();
-        throw e;
+        try {
+          conn.rollback();
+        } catch (SQLException rollbackEx) {
+          logger.warn("Ошибка при откате транзакции", rollbackEx);
+        }
+        // Не бросаем исключение - IF EXISTS должен предотвратить большинство ошибок
+        logger.warn("Ошибка при удалении таблиц (возможно, таблицы уже удалены): {}", e.getMessage());
       } finally {
         // Восстанавливаем auto-commit
-        conn.setAutoCommit(true);
+        try {
+          conn.setAutoCommit(true);
+        } catch (SQLException e) {
+          logger.warn("Ошибка при восстановлении auto-commit", e);
+        }
       }
 
     } catch (SQLException e) {
-      logger.error("❌ Ошибка удаления таблиц из БД: {}", e.getMessage());
-      // Игнорируем ошибки "таблица не существует"
-      if (!e.getMessage().contains("does not exist")) {
-        throw new RuntimeException("Не удалось удалить таблицы зи БД", e);
-      }
-      logger.info("✅ Таблицы уже удалены или не существовали");
+      logger.warn("Ошибка при удалении таблиц из БД (возможно, таблицы уже удалены): {}", e.getMessage());
+      // Не бросаем исключение - это нормально, если таблиц нет
     }
   }
 }

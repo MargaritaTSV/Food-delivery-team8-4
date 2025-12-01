@@ -1,55 +1,69 @@
 package com.team8.fooddelivery.service;
 
 import com.team8.fooddelivery.model.notification.Notification;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.team8.fooddelivery.model.notification.NotificationTemplate;
 
-import java.time.LocalDateTime;
-import java.util.*;
+import java.util.List;
 
-public class NotificationService {
+/**
+ * Интерфейс для работы с уведомлениями клиентов
+ */
+public interface NotificationService {
 
-    private static final Logger logger = LoggerFactory.getLogger(NotificationService.class);
-    private static final Map<Long, List<Notification>> CLIENT_NOTIFICATIONS = new HashMap<>();
-    private static Long NOTIF_ID_SEQ = 1L;
+    /**
+     * Базовый метод для отправки уведомления
+     * @param clientId ID клиента
+     * @param template Шаблон уведомления
+     * @param args Аргументы для форматирования шаблона
+     */
+    void notify(Long clientId, NotificationTemplate template, Object... args);
 
-    // Базовая отправка
-    public Notification sendNotification(Long clientId, String type, String message) {
-        Notification notification = new Notification(
-                NOTIF_ID_SEQ++,
-                clientId,
-                type,
-                message,
-                LocalDateTime.now()
-        );
-        CLIENT_NOTIFICATIONS.computeIfAbsent(clientId, k -> new ArrayList<>()).add(notification);
-        logger.info("Отправлено уведомление клиенту {}: {}", clientId, message);
-        return notification;
-    }
+    /**
+     * Уведомление об обновлении профиля
+     * @param clientId ID клиента
+     * @param messageArg Сообщение
+     */
+    void notifyAccount(Long clientId, String messageArg);
 
-    // Унифицированные методы
-    public void notifyAccount(Long clientId, String message) {
-        sendNotification(clientId, "ACCOUNT", message);
-    }
+    /**
+     * Уведомление о приветствии
+     * @param clientId ID клиента
+     * @param clientName Имя клиента
+     */
+    void notifyWelcome(Long clientId, String clientName);
 
-    public void notifyOrder(Long clientId, String message) {
-        sendNotification(clientId, "ORDER", message);
-    }
+    /**
+     * Уведомление о размещении заказа
+     * @param clientId ID клиента
+     * @param orderId ID заказа
+     * @param price Цена заказа
+     */
+    void notifyOrderPlaced(Long clientId, long orderId, long price);
 
-    public void notifyDelivery(Long clientId, String message) {
-        sendNotification(clientId, "DELIVERY", message);
-    }
+    /**
+     * Уведомление об оплате заказа
+     * @param clientId ID клиента
+     * @param orderId ID заказа
+     */
+    void notifyOrderPaid(Long clientId, long orderId);
 
-    public List<Notification> getNotifications(Long clientId) {
-        return CLIENT_NOTIFICATIONS.getOrDefault(clientId, Collections.emptyList());
-    }
+    /**
+     * Уведомление о доставке заказа
+     * @param clientId ID клиента
+     * @param orderId ID заказа
+     */
+    void notifyDelivery(Long clientId, long orderId);
 
-    public void printNotifications(Long clientId) {
-        List<Notification> list = getNotifications(clientId);
-        if (list.isEmpty()) {
-            System.out.println("Уведомлений нет");
-        } else {
-            list.forEach(System.out::println);
-        }
-    }
+    /**
+     * Получить все уведомления клиента
+     * @param clientId ID клиента
+     * @return Список уведомлений
+     */
+    List<Notification> getNotifications(Long clientId);
+
+    /**
+     * Очистить уведомления клиента
+     * @param clientId ID клиента
+     */
+    void clear(Long clientId);
 }
